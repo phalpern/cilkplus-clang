@@ -360,6 +360,10 @@ KEYWORD(_Cilk_spawn                 , KEYCILKPLUS)
 KEYWORD(_Cilk_sync                  , KEYCILKPLUS)
 KEYWORD(_Cilk_for                   , KEYCILKPLUS)
 
+//Intel Cplex
+KEYWORD(_Task_parallel              ,KEYCPLEX)
+
+
 // GNU and MS Type Traits
 KEYWORD(__has_nothrow_assign          , KEYCXX)
 KEYWORD(__has_nothrow_move_assign     , KEYCXX)

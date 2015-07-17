@@ -2283,6 +2283,12 @@ private:
   /// \param Kind Kind of current clause.
   ///
   OMPClause *ParseOpenMPVarListClause(OpenMPClauseKind Kind);
+
+  //===--------------------------------------------------------------------===//
+  //Task_parallel:
+  // parse Task_parallel stmts
+  StmtResult ParseTask_parallelStatement();
+
 public:
   bool ParseUnqualifiedId(CXXScopeSpec &SS, bool EnteringContext,
                           bool AllowDestructorName,

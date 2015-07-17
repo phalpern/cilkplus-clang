@@ -1,0 +1,4 @@
+#ifndef TASK_PARALLEL_DEF
+#define TASK_PARALLEL_DEF
+
+#endif // TASK_PARALLEL_DEF

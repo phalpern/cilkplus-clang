@@ -380,6 +380,11 @@ Retry:
     ProhibitAttributes(Attrs);
     return ParseOpenMPDeclarativeOrExecutableDirective();
 
+  case tok::kw__Task_parallel:
+      Res = ParseTask_parallelStatement();
+      SemiError = "_Task_parallel";
+      break;
+
   }
 
   // If we reached this code, the statement must end in a semicolon.
