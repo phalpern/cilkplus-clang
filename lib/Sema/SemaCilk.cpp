@@ -3916,17 +3916,17 @@ CilkSpawnDecl *Sema::BuildCilkSpawnDecl(Decl *D) {
 /// \param AssociatedStmt
 /// \return StmtResult
 ////////////////////////////////////////////////////////////////////
- StmtResult ActOnTask_parallelSpawnStmt(Stmt *AssociatedStmt)
+ StmtResult Sema::ActOnTask_parallelSpawnStmt(StmtResult &AssociatedStmt)
  {
-
-     CaptureVariablesInStmt(*this, AssociatedStmt);
-     AssociatedStmt = Actions.ActOnCapturedRegionEnd(AssociatedStmt);
+     Stmt *AsstStmt = AssociatedStmt.take();
+     CaptureVariablesInStmt(*this, AsstStmt);
+     AssociatedStmt = ActOnCapturedRegionEnd(AsstStmt);
 
      DeclContext *DC = CurContext;
      while (!(DC->isFunctionOrMethod() || DC->isRecord() || DC->isFileContext()))
        DC = DC->getParent();
 
-     CapturedStmt *CS = cast<CapturedStmt>(AssociatedStmt);
+     CapturedStmt *CS = cast<CapturedStmt>(AssociatedStmt.release());
      CilkSpawnDecl *Spawn = CilkSpawnDecl::Create(Context, DC, CS);
      DC->addDecl(Spawn);
 

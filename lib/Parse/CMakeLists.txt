@@ -13,6 +13,7 @@ add_clang_library(clangParse
   ParseSIMD.cpp
   ParseTemplate.cpp
   ParseTentative.cpp
+  ParseTask_parallel.cpp
   Parser.cpp
   )
 

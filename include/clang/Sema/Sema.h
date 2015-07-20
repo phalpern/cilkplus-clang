@@ -3039,7 +3039,7 @@ public:
   bool DiagCilkSpawnFullExpr(Expr *E);
 
   /// \brief Task_parallel actions
-  StmtResult ActOnTask_parallelSpawnStmt(Stmt *AssociatedStmt);
+  StmtResult ActOnTask_parallelSpawnStmt(StmtResult &AssociatedStmt);
 
 
   const VarDecl *getCopyElisionCandidate(QualType ReturnType, Expr *E,

@@ -29,7 +29,7 @@ using namespace clang;
 /// \brief ParseTask_parallelStatement
 /// \return StmtResult
 ///////////////////////////////////////
-StmtResult ParseTask_parallelStatement()
+StmtResult Parser::ParseTask_parallelStatement()
 {
     assert(Tok.is(tok::kw__Task_parallel) && "Not a Task_parallel directive!");
     StmtResult Res;
@@ -52,14 +52,14 @@ StmtResult ParseTask_parallelStatement()
         }
 
         StmtResult AssociatedStmt;
-        Sema::CompoundScopeRAII CompoundScope(Actions);
+//        Sema::CompoundScopeRAII CompoundScope(Actions);
         ActOnCapturedRegionStart(Task_spawnLoc, getCurScope(),CR_CilkSpawn,1);
         ActOnStartOfCompoundStmt();
         //Parse Stmt
         AssociatedStmt = ParseStatement();
         Actions.ActOnFinishOfCompoundStmt();
         if(AssociatedStmt.isUsable()){
-            Res = Actions.ActonTask_parallelStmt(AssociatedStmt.take());
+            Res = Actions.ActonTask_parallelStmt(AssociatedStmt);
         }else{
 
             Res = StmtError();
