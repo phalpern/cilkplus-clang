@@ -3038,6 +3038,10 @@ public:
 
   bool DiagCilkSpawnFullExpr(Expr *E);
 
+  /// \brief Task_parallel actions
+  StmtResult ActOnTask_parallelSpawnStmt(Stmt *AssociatedStmt);
+
+
   const VarDecl *getCopyElisionCandidate(QualType ReturnType, Expr *E,
                                          bool AllowFunctionParameters);
 

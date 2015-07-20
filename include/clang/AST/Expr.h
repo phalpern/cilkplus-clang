@@ -4564,6 +4564,10 @@ public:
            Ty->isDependentType(), Ty->isDependentType(),
            Ty->isInstantiationDependentType(), false), TheSpawn(D) { }
 
+//  /// \brief For Task Block an empty expr with cilkSpawnDecl
+//  explicit CilkSpawnExpr(CilkSpawnDecl *D, EmptyShell Empty)
+//    : Expr(CilkSpawnExprClass, Empty),TheSpawn(D) { }
+
   /// \brief Build an empty block expression.
   explicit CilkSpawnExpr(EmptyShell Empty) : Expr(CilkSpawnExprClass, Empty) { }
 

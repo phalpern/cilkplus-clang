@@ -3911,6 +3911,36 @@ CilkSpawnDecl *Sema::BuildCilkSpawnDecl(Decl *D) {
   return Spawn;
 }
 
+////////////////////////////////////////////////////////////////////
+/// \brief ActOnTask_parallelSpawnStmt
+/// \param AssociatedStmt
+/// \return StmtResult
+////////////////////////////////////////////////////////////////////
+ StmtResult ActOnTask_parallelSpawnStmt(Stmt *AssociatedStmt)
+ {
+
+     CaptureVariablesInStmt(*this, AssociatedStmt);
+     AssociatedStmt = Actions.ActOnCapturedRegionEnd(AssociatedStmt);
+
+     DeclContext *DC = CurContext;
+     while (!(DC->isFunctionOrMethod() || DC->isRecord() || DC->isFileContext()))
+       DC = DC->getParent();
+
+     CapturedStmt *CS = cast<CapturedStmt>(AssociatedStmt);
+     CilkSpawnDecl *Spawn = CilkSpawnDecl::Create(Context, DC, CS);
+     DC->addDecl(Spawn);
+
+     MarkFunctionAsSpawning(*this);
+     QualType QTy = Context.VoidTy;
+
+     ExprResult cilkExpr = Owned(new (Context) CilkSpawnExpr(Spawn,QTy));
+     StmtResult Res = ActOnCEANExpr(cilkExpr.take());//or cast<Stmt>(cilkExpr.take());
+     if (Res.isInvalid())
+       return StmtError();
+     return Owned(Res.take());
+
+ }
+
 namespace {
 // Diagnose any _Cilk_spawn expressions (see comment below). InSpawn indicates
 // that S is contained within a spawn, e.g. _Cilk_spawn foo(_Cilk_spawn bar())

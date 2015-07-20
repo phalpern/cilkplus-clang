@@ -1,0 +1,22 @@
+//===--- Task_parallel.def - Task_parallel directives list ---*- C++ -*-===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+/// \file
+/// \brief This file defines the list of supported Task_parallel directives
+///
+//===----------------------------------------------------------------------===//
+
+#ifndef TP_DIRECTIVE
+#  define TP_DIRECTIVE(Name)
+#endif
+
+// TP directives.
+TP_DIRECTIVE(_Block)
+TP_DIRECTIVE(_Spawn)
+TP_DIRECTIVE(_Sync)
+TP_DIRECTIVE(_Call)

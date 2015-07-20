@@ -14,6 +14,7 @@
 #ifndef LLVM_CLANG_AST_STMT_H
 #define LLVM_CLANG_AST_STMT_H
 
+#include "clang/AST/Decl.h"
 #include "clang/AST/DeclGroup.h"
 #include "clang/AST/StmtIterator.h"
 #include "clang/Basic/CapturedStmt.h"
@@ -2122,6 +2123,36 @@ public:
 
   child_range children() { return child_range(); }
 };
+
+//class Task_parallelSpawnStmt : public Stmt{
+//  CilkSpawnDecl *TheSpawn;
+//  SourceLocation SpawnLoc;
+//public:
+//  explicit Task_parallelSpawnStmt(CilkSpawnDecl *D, SourceLocation SL)
+//    : Stmt(CilkSpawnExprClass),SpawnLoc(SL), TheSpawn(D) { }
+
+//    /// \brief Build an empty block expression.
+//  explicit CilkSpawnExpr(EmptyShell Empty) : Stmt(CilkSpawnExprClass, Empty) { }
+
+//  const CilkSpawnDecl *getSpawnDecl() const { return TheSpawn; }
+//  CilkSpawnDecl *getSpawnDecl() { return TheSpawn; }
+//  void setSpawnDecl(CilkSpawnDecl *D) { TheSpawn = D; }
+
+//  Stmt *getSpawnStmt() { return TheSpawn->getSpawnStmt(); }
+//  const Stmt *getSpawnStmt() const { return TheSpawn->getSpawnStmt(); }
+
+//  Expr *getSpawnExpr() { return dyn_cast<Expr>(getSpawnStmt()); }
+//  const Expr *getSpawnExpr() const { return dyn_cast<Expr>(getSpawnStmt()); }
+
+//  SourceLocation getLocStart() const LLVM_READONLY;
+//  SourceLocation getLocEnd() const LLVM_READONLY;
+
+//  static bool classof(const Stmt *T) {
+//    return T->getStmtClass() == CilkSpawnExprClass;
+//  }
+
+//  child_range children() { return child_range(); }
+//};
 
 /// \brief This represents a Cilk for grainsize statement.
 /// \code
