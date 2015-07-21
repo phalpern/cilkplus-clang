@@ -1122,9 +1122,10 @@ void setHelperAttributes(CodeGenFunction &CGF,
                          const Stmt *S,
                          Function *Helper) {
   FindSpawnCallExpr Finder(const_cast<Stmt *>(S));
-  assert(Finder.Spawn && "spawn call expected");
+  //assert(Finder.Spawn && "spawn call expected");
 
   // Do not set for indirect spawn calls.
+  if(Finder.Spawn)
   if (const FunctionDecl *FD = Finder.Spawn->getDirectCallee()) {
     GlobalDecl GD(FD);
     llvm::Constant *Addr = CGF.CGM.GetAddrOfFunction(GD);

@@ -20,7 +20,6 @@
 #include "clang/Parse/Parser.h"
 #include "clang/Sema/Scope.h"
 #include "clang/Sema/Sema.h"
-#include "llvm/ADT/PointerIntPair.h"
 #include "RAIIObjectsForParser.h"
 
 using namespace clang;
@@ -37,6 +36,8 @@ StmtResult Parser::ParseTask_parallelStatement()
     Task_parallelDirectiveKind Dkind = getTask_parallelDirectiveKind(PP.getSpelling(Tok));
     const char *SemiError = 0;
 
+    
+    
     switch(Dkind){
     case Task_parallel_Block:
         ConsumeToken();
