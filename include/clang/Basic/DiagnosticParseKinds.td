@@ -861,6 +861,13 @@ def warn_cilk_for_following_grainsize: Warning<
   "'#pragma cilk' ignored, because it is not followed by a '_Cilk_for' loop">,
   InGroup<SourceUsesCilkPlus>;
 
+//Task_parallel
+def err_Task_parallel_unknown_directive: Error<
+  "'Undefined' Task_parallel directive seen after '_Task_parallel'">;
+
+def err_Task_parallel_unexpected_directive: Error<
+  "'Unexpected Directive' after '_Task_parallel'">;
+
 // Pragma SIMD
 def err_simd_for_missing_initialization: Error<
   "missing initialization in simd for">;

@@ -16,14 +16,15 @@
 #define LLVM_CLANG_BASIC_TPKINDS_H
 
 #include "llvm/ADT/StringRef.h"
-
+#include "llvm/ADT/StringSwitch.h"
+#include "llvm/Support/ErrorHandling.h"
 namespace clang {
 
 /// \brief Task_parallel directives.
 enum Task_parallelDirectiveKind {
   Task_parallel_unknown = 0,
 #define TP_DIRECTIVE(Name) \
-  Task_parallel_##Name,
+  Task_parallel##Name,
 #include "clang/Basic/Task_parallelKinds.def"
   NUM_TP_DIRECTIVES
 };
@@ -31,17 +32,18 @@ enum Task_parallelDirectiveKind {
 Task_parallelDirectiveKind getTask_parallelDirectiveKind(llvm::StringRef Str){
     return llvm::StringSwitch<Task_parallelDirectiveKind>(Str)
   #define TP_DIRECTIVE(Name) \
-             .Case(#Name, Task_parallel_##Name)
+             .Case(#Name, Task_parallel##Name)
   #include "clang/Basic/Task_parallelKinds.def"
              .Default(Task_parallel_unknown);
   }
+
 const char *getTPDirectiveName(Task_parallelDirectiveKind Kind){
     assert(Kind < NUM_TP_DIRECTIVES);
     switch (Kind) {
     case Task_parallel_unknown:
       return "unknown";
   #define TP_DIRECTIVE(Name) \
-    case Task_parallel_##Name : return #Name;
+    case Task_parallel##Name : return #Name;
   #include "clang/Basic/Task_parallelKinds.def"
     case NUM_TP_DIRECTIVES:
       break;
@@ -50,3 +52,5 @@ const char *getTPDirectiveName(Task_parallelDirectiveKind Kind){
   }
 
 }
+
+#endif

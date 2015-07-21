@@ -35,50 +35,55 @@ StmtResult Parser::ParseTask_parallelStatement()
     StmtResult Res;
     SourceLocation Loc = ConsumeToken();
     Task_parallelDirectiveKind Dkind = getTask_parallelDirectiveKind(PP.getSpelling(Tok));
+    const char *SemiError = 0;
 
     switch(Dkind){
     case Task_parallel_Block:
         ConsumeToken();
-
         break;
-    case Task_parallel_Spawn:
+    case Task_parallel_Spawn:{
         ConsumeToken();
-
         if (!getLangOpts().CilkPlus) {
-          Diag(Tok, diag::err_cilkplus_disable);
-          SkipUntil(tok::semi);
-          Res = StmtError();
-          break;
+            Diag(Tok, diag::err_cilkplus_disable);
+            SkipUntil(tok::r_brace);
+            Res = StmtError();
+            break;
         }
-
         StmtResult AssociatedStmt;
-//        Sema::CompoundScopeRAII CompoundScope(Actions);
-        ActOnCapturedRegionStart(Task_spawnLoc, getCurScope(),CR_CilkSpawn,1);
-        ActOnStartOfCompoundStmt();
+        Actions.ActOnCapturedRegionStart(Loc, getCurScope(),CR_CilkSpawn,1);
+        Actions.ActOnStartOfCompoundStmt();
         //Parse Stmt
         AssociatedStmt = ParseStatement();
         Actions.ActOnFinishOfCompoundStmt();
         if(AssociatedStmt.isUsable()){
-            Res = Actions.ActonTask_parallelStmt(AssociatedStmt);
+            Res = Actions.ActOnTask_parallelSpawnStmt(AssociatedStmt);
         }else{
-
             Res = StmtError();
         }
-
-        break;
-
+      }
+      break;
     case Task_parallel_Sync:
         if (!getLangOpts().CilkPlus) {
-          Diag(Tok, diag::err_cilkplus_disable);
-          SkipUntil(tok::semi);
-          Res = StmtError();
-          break;
+            Diag(Tok, diag::err_cilkplus_disable);
+            SkipUntil(tok::semi);
+            Res = StmtError();
+            break;
         }
-
         Res = Actions.ActOnCilkSyncStmt(ConsumeToken());
+        SemiError = "_Task_parallel _Sync";
+        if (Tok.is(tok::semi)) {
+            ConsumeToken();
+        }else if (!Res.isInvalid()) {
+            // If the result was valid, then we do want to diagnose this.  Use
+            // ExpectAndConsume to emit the diagnostic, even though we know it won't
+            // succeed.
+            ExpectAndConsume(tok::semi, diag::err_expected_semi_after_stmt, SemiError);
+            // Skip until we see a } or ;, but don't eat it.
+            SkipUntil(tok::r_brace, StopAtSemi | StopBeforeMatch);
+        }
         break;
     case Task_parallel_Call:
-
+        ConsumeToken();
         break;
     case Task_parallel_unknown:
         Diag(Tok, diag::err_Task_parallel_unknown_directive);
@@ -86,7 +91,6 @@ StmtResult Parser::ParseTask_parallelStatement()
     case NUM_TP_DIRECTIVES:
         Diag(Tok, diag::err_Task_parallel_unexpected_directive);
         break;
-
     }
 
     return Res;
