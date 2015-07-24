@@ -381,7 +381,7 @@ Retry:
     return ParseOpenMPDeclarativeOrExecutableDirective();
 
   case tok::kw__Task_parallel:
-      return ParseTask_parallelStatement();
+      return ParseTask_parallelStatement(Stmts,OnlyStatement,Attrs);
 
   }
 

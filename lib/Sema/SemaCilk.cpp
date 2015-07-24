@@ -3930,6 +3930,7 @@ CilkSpawnDecl *Sema::BuildCilkSpawnDecl(Decl *D) {
      CilkSpawnDecl *Spawn = CilkSpawnDecl::Create(Context, DC, CS);
      DC->addDecl(Spawn);
 
+
      MarkFunctionAsSpawning(*this);
      QualType QTy = Context.VoidTy;
 
@@ -3939,6 +3940,48 @@ CilkSpawnDecl *Sema::BuildCilkSpawnDecl(Decl *D) {
        return StmtError();
      return Owned(Res.take());
 
+ }
+ /////////////////////////////////////////////////
+ /// \brief ActOnTask_parallelCallStmt
+ /// \param Expression with Task_parallel _Call
+ /// \return StmtResult
+ ///////////////////////////////////////////////////
+ StmtResult Sema::ActOnTask_parallelCallStmt(Expr *E)
+ {
+     if (!E)
+       return StmtError();
+
+     if (ExprWithCleanups *EWC = dyn_cast<ExprWithCleanups>(E))
+       E = EWC->getSubExpr();
+
+     if (CilkSpawnExpr *CSE = dyn_cast<CilkSpawnExpr>(E)) {
+       E = CSE->getSpawnExpr();
+       assert(E && "Expr expected");
+     }
+
+     Stmt *Body = 0;
+     {
+       // Capture variables used in this full expression.
+       ActOnCapturedRegionStart(E->getLocStart(), /*Scope*/ 0, CR_CilkSpawn,
+                                /*NumParams*/ 1);
+       CaptureVariablesInStmt(*this, E);
+       Body = ActOnCapturedRegionEnd(E).get();
+     }
+
+     DeclContext *DC = CurContext;
+     while (!(DC->isFunctionOrMethod() || DC->isRecord() || DC->isFileContext()))
+       DC = DC->getParent();
+
+     CapturedStmt *CS = cast<CapturedStmt>(Body);
+     CilkSpawnDecl *Spawn = CilkSpawnDecl::Create(Context, DC, CS);
+     DC->addDecl(Spawn);
+
+     MarkFunctionAsSpawning(*this);
+     ExprResult cilkExpr = Owned(new (Context) CilkSpawnExpr(Spawn, E->getType()));
+     StmtResult Res = ActOnCEANExpr(cilkExpr.take());//or cast<Stmt>(cilkExpr.take());
+     if (Res.isInvalid())
+       return StmtError();
+     return Owned(Res.take());
  }
 
 namespace {

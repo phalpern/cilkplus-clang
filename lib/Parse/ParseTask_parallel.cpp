@@ -11,11 +11,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "clang/AST/Stmt.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/Basic/Task_parallelKinds.h"
 #include "clang/Basic/SourceLocation.h"
 #include "clang/AST/Expr.h"
-#include "clang/AST/Stmt.h"
 #include "clang/Parse/ParseDiagnostic.h"
 #include "clang/Parse/Parser.h"
 #include "clang/Sema/Scope.h"
@@ -24,73 +24,159 @@
 
 using namespace clang;
 
+//////////////////////////////
+/// \brief isSpawningFunction
+/// \param Decl
+/// \return
+//////////////////////////////
+bool Parser::isSpawningFunction(Decl *D)
+{
+    bool bRet = false;
+    for(auto I = SpawningFunctions.begin(), E = SpawningFunctions.end(); I!= E; ++I){
+        if(*I == D){
+            bRet = true;
+            break;
+        }
+    }
+    return bRet;
+}
+
 ///////////////////////////////////////
 /// \brief ParseTask_parallelStatement
 /// \return StmtResult
 ///////////////////////////////////////
-StmtResult Parser::ParseTask_parallelStatement()
+StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
+                                                bool OnlyStatement,
+                                                ParsedAttributesWithRange &Attrs)
 {
     assert(Tok.is(tok::kw__Task_parallel) && "Not a Task_parallel directive!");
     StmtResult Res;
     SourceLocation Loc = ConsumeToken();
     Task_parallelDirectiveKind Dkind = getTask_parallelDirectiveKind(PP.getSpelling(Tok));
     const char *SemiError = 0;
-
-    
     
     switch(Dkind){
-    case Task_parallel_Block:
-        ConsumeToken();
+    case Task_parallel_Block:{
+            ConsumeToken();
+            if (!getLangOpts().CilkPlus) {
+                Diag(Tok, diag::err_cilkplus_disable);
+                SkipUntil(tok::r_brace);
+                Res = StmtError();
+                break;
+            }
+            if (Tok.isNot(tok::l_brace)) {
+                Diag(Tok, diag::err_expected_lbrace);
+                Res = StmtError();
+                break;
+            }
+
+            SourceLocation Loc = Tok.getLocation();
+
+            ParseScope CapturedRegionScope(this, Scope::FnScope | Scope::DeclScope);
+            Actions.ActOnCapturedRegionStart(Loc, getCurScope(), CR_Default,
+                                             /*NumParams=*/1);
+
+            StmtResult R = ParseCompoundStatement();
+            CapturedRegionScope.Exit();
+
+            if (R.isInvalid()) {
+              Actions.ActOnCapturedRegionError();
+              return StmtError();
+            }
+
+            Res = Actions.ActOnCapturedRegionEnd(R.get());
+//            if(Tok.is(tok::l_brace)){
+//                SourceLocation lb = ConsumeToken();
+//                Actions.ActOnStartOfCompoundStmt();
+//                StmtResult AssociatedStmt;
+//                AssociatedStmt = ParseStatement();
+//                if(Tok.is(tok::r_brace)){
+//                    SourceLocation rb = ConsumeToken();
+//                    Actions.ActOnFinishOfCompoundStmt();
+//                    Res = Actions.ActOnTask_parallelBlockStmt(AssociatedStmt.take(),lb,rb);
+//                }else{
+//                    Res = StmtError();
+//                }
+//            }else{
+//                Res = StmtError();
+//            }
+        }
         break;
     case Task_parallel_Spawn:{
-        ConsumeToken();
-        if (!getLangOpts().CilkPlus) {
-            Diag(Tok, diag::err_cilkplus_disable);
-            SkipUntil(tok::r_brace);
-            Res = StmtError();
-            break;
-        }
-        StmtResult AssociatedStmt;
-        Actions.ActOnCapturedRegionStart(Loc, getCurScope(),CR_CilkSpawn,1);
-        Actions.ActOnStartOfCompoundStmt();
-        //Parse Stmt
-        AssociatedStmt = ParseStatement();
-        Actions.ActOnFinishOfCompoundStmt();
-        if(AssociatedStmt.isUsable()){
-            Res = Actions.ActOnTask_parallelSpawnStmt(AssociatedStmt);
-        }else{
-            Res = StmtError();
-        }
+            ConsumeToken();
+            if (!getLangOpts().CilkPlus) {
+                Diag(Tok, diag::err_cilkplus_disable);
+                SkipUntil(tok::r_brace);
+                Res = StmtError();
+                break;
+            }
+            StmtResult AssociatedStmt;
+            Actions.ActOnCapturedRegionStart(Loc, getCurScope(),CR_CilkSpawn,1);
+            Actions.ActOnStartOfCompoundStmt();
+            //Parse Stmt
+            AssociatedStmt = ParseStatement();
+            Actions.ActOnFinishOfCompoundStmt();
+            if(AssociatedStmt.isUsable()){
+                Res = Actions.ActOnTask_parallelSpawnStmt(AssociatedStmt);
+            }else{
+                Res = StmtError();
+            }
       }
       break;
     case Task_parallel_Sync:
-        if (!getLangOpts().CilkPlus) {
-            Diag(Tok, diag::err_cilkplus_disable);
-            SkipUntil(tok::semi);
-            Res = StmtError();
-            break;
-        }
-        Res = Actions.ActOnCilkSyncStmt(ConsumeToken());
-        SemiError = "_Task_parallel _Sync";
-        if (Tok.is(tok::semi)) {
-            ConsumeToken();
-        }else if (!Res.isInvalid()) {
-            // If the result was valid, then we do want to diagnose this.  Use
-            // ExpectAndConsume to emit the diagnostic, even though we know it won't
-            // succeed.
-            ExpectAndConsume(tok::semi, diag::err_expected_semi_after_stmt, SemiError);
-            // Skip until we see a } or ;, but don't eat it.
-            SkipUntil(tok::r_brace, StopAtSemi | StopBeforeMatch);
-        }
+            if (!getLangOpts().CilkPlus) {
+                Diag(Tok, diag::err_cilkplus_disable);
+                SkipUntil(tok::semi);
+                Res = StmtError();
+                break;
+            }
+            Res = Actions.ActOnCilkSyncStmt(ConsumeToken());
+            SemiError = "_Task_parallel _Sync";
+            if (Tok.is(tok::semi)) {
+                ConsumeToken();
+            }else if (!Res.isInvalid()) {
+                // If the result was valid, then we do want to diagnose this.  Use
+                // ExpectAndConsume to emit the diagnostic, even though we know it won't
+                // succeed.
+                ExpectAndConsume(tok::semi, diag::err_expected_semi_after_stmt, SemiError);
+                // Skip until we see a } or ;, but don't eat it.
+                SkipUntil(tok::r_brace, StopAtSemi | StopBeforeMatch);
+            }
         break;
-    case Task_parallel_Call:
-        ConsumeToken();
+    case Task_parallel_Call:{
+            ConsumeToken();
+            if(isDeclarationStatement() && !OnlyStatement){
+                SourceLocation DeclStart = Tok.getLocation(), DeclEnd;
+                DeclGroupPtrTy Decl = ParseDeclaration(Stmts, Declarator::BlockContext,
+                                                       DeclEnd, Attrs);
+                Res = Actions.ActOnDeclStmt(Decl, DeclStart, DeclEnd);
+                DeclGroupRef DG = Decl.get();
+                for(auto DI = DG.begin(), DE = DG.end(); DI != DE; ++DI)
+                    SpawningFunctions.push_back(*DI);
+            }else{
+                ExprResult exp = ParseCastExpression(false);
+                if(exp.isInvalid()) Res = StmtError();
+                else{
+                    Expr *E = exp.get();
+                    if(CallExpr *CE = dyn_cast<CallExpr>(E)){
+                        if(isSpawningFunction(CE->getCalleeDecl())){
+                          Res = Actions.ActOnTask_parallelCallStmt(E);
+                        }
+                    }else{
+                        Res = Actions.ActOnCEANExpr(exp.take());//or cast<Stmt>(exp.take());
+                    }
+                }
+            }
+
+            if(Res.isInvalid())
+                Res = StmtError();
+        }
         break;
     case Task_parallel_unknown:
-        Diag(Tok, diag::err_Task_parallel_unknown_directive);
+            Diag(Tok, diag::err_Task_parallel_unknown_directive);
         break;
     case NUM_TP_DIRECTIVES:
-        Diag(Tok, diag::err_Task_parallel_unexpected_directive);
+            Diag(Tok, diag::err_Task_parallel_unexpected_directive);
         break;
     }
 
