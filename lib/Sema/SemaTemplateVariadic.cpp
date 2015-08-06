@@ -740,6 +740,7 @@ bool Sema::containsUnexpandedParameterPacks(Declarator &D) {
   case TST_sampler_t:
   case TST_event_t:
   case TST_error:
+  case TST_cilkrts_sf_t:
     break;
   }
   

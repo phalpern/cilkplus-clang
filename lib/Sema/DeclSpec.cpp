@@ -294,6 +294,7 @@ bool Declarator::isDeclarationOfFunction() const {
     case TST_image3d_t:
     case TST_sampler_t:
     case TST_event_t:
+    case TST_cilkrts_sf_t:
       return false;
 
     case TST_decltype_auto:
@@ -356,7 +357,7 @@ unsigned DeclSpec::getParsedSpecifiers() const {
     Res |= PQ_TypeSpecifier;
 
   if (FS_inline_specified || FS_virtual_specified || FS_explicit_specified ||
-      FS_noreturn_specified || FS_forceinline_specified)
+      FS_noreturn_specified || FS_forceinline_specified || FS_Spawn_specified)
     Res |= PQ_FunctionSpecifier;
   return Res;
 }
@@ -468,6 +469,7 @@ const char *DeclSpec::getSpecifierName(DeclSpec::TST T) {
   case DeclSpec::TST_sampler_t:   return "sampler_t";
   case DeclSpec::TST_event_t:     return "event_t";
   case DeclSpec::TST_error:       return "(error)";
+  case DeclSpec::TST_cilkrts_sf_t: return "__cilkrts_stack_frame";
   }
   llvm_unreachable("Unknown typespec!");
 }
@@ -851,6 +853,13 @@ bool DeclSpec::SetFriendSpec(SourceLocation Loc, const char *&PrevSpec,
 
   Friend_specified = true;
   FriendLoc = Loc;
+  return false;
+}
+
+bool DeclSpec::SetTask_parallelSpawn(SourceLocation Loc)
+{
+  FS_Spawn_specified = true;
+  FS_Task_Spawn = Loc;
   return false;
 }
 

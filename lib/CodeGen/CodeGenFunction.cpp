@@ -642,7 +642,15 @@ void CodeGenFunction::StartFunction(GlobalDecl GD,
       CGM.getCilkPlusRuntime().pushCilkImplicitSyncCleanup(*this);
   }
 
+
   EmitFunctionProlog(*CurFnInfo, CurFn, Args);
+
+  //The cilkrts stack frame that is passed has to be loaded
+  if (const FunctionDecl *FD = dyn_cast_or_null<FunctionDecl>(D)){
+      if(getLangOpts().CilkPlus && FD->isTask_parallelSpawningFunction()){
+          CGM.getCilkPlusRuntime().EmitCilkrtsParam(*this);
+      }
+  }
 
   if (D && isa<CXXMethodDecl>(D) && cast<CXXMethodDecl>(D)->isInstance()) {
     CGM.getCXXABI().EmitInstanceFunctionProlog(*this);
@@ -745,6 +753,10 @@ void CodeGenFunction::GenerateCode(GlobalDecl GD, llvm::Function *Fn,
     if (CGM.getCXXABI().HasThisReturn(GD))
       ResTy = MD->getThisType(getContext());
     CGM.getCXXABI().BuildInstanceFunctionParams(*this, ResTy, Args);
+  }
+
+  if(getLangOpts().CilkPlus && FD->isTask_parallelSpawningFunction()){
+        CGM.getCilkPlusRuntime().BuildCilkrtsParam(*this, Args);
   }
 
   for (unsigned i = 0, e = FD->getNumParams(); i != e; ++i)

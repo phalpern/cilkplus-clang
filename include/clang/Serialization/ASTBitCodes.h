@@ -744,7 +744,9 @@ namespace clang {
       /// \brief OpenCL sampler type.
       PREDEF_TYPE_SAMPLER_ID    = 45,
       /// \brief _Quad type
-      PREDEF_TYPE_FLOAT128_ID       = 46
+      PREDEF_TYPE_FLOAT128_ID       = 46,
+      /// \brief cilkrts_stack_frame type
+      PREDEF_TYPE_CILKRTSSF_ID  = 47
     };
 
     /// \brief The number of predefined type IDs that are reserved for

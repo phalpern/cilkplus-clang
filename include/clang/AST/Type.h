@@ -1585,6 +1585,8 @@ public:
 
   bool isOpenCLSpecificType() const;            // Any OpenCL specific type
 
+  bool isCilkrtsSFTy() const;                   //Cilkrts stackFrame type
+
   /// Determines if this type, which must satisfy
   /// isObjCLifetimeType(), is implicitly __unsafe_unretained rather
   /// than implicitly __strong.
@@ -4999,6 +5001,10 @@ inline bool Type::isImageType() const {
 
 inline bool Type::isOpenCLSpecificType() const {
   return isSamplerT() || isEventT() || isImageType();
+}
+
+inline bool Type::isCilkrtsSFTy() const{
+    return isSpecificBuiltinType(BuiltinType::CilkrtsSF);
 }
 
 inline bool Type::isTemplateTypeParmType() const {

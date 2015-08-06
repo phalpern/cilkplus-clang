@@ -1254,7 +1254,8 @@ void MicrosoftCXXNameMangler::mangleType(const BuiltinType *T,
   case BuiltinType::OCLImage3d: Out << "PAUocl_image3d@@"; break;
   case BuiltinType::OCLSampler: Out << "PAUocl_sampler@@"; break;
   case BuiltinType::OCLEvent: Out << "PAUocl_event@@"; break;
- 
+  case BuiltinType::CilkrtsSF: Out << "__cilkrts_sf object"; break;
+
   case BuiltinType::NullPtr: Out << "$$T"; break;
 
   case BuiltinType::Char16:

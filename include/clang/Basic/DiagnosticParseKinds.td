@@ -868,6 +868,11 @@ def err_Task_parallel_unknown_directive: Error<
 def err_Task_parallel_unexpected_directive: Error<
   "'Unexpected Directive' after '_Task_parallel'">;
 
+def err_expected_call:Error<
+    "expected 'function call' after '_Task_parallel _Call'">;
+
+def err_Function_decl_not_Task_parallel_Call: Error<
+    " Function Declaration is not a '_Task_parallel _Call'">;
 // Pragma SIMD
 def err_simd_for_missing_initialization: Error<
   "missing initialization in simd for">;

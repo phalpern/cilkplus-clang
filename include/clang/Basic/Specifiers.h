@@ -72,7 +72,8 @@ namespace clang {
     TST_image3d_t,        // OpenCL image3d_t
     TST_sampler_t,        // OpenCL sampler_t
     TST_event_t,          // OpenCL event_t
-    TST_error         // erroneous type
+    TST_error,         // erroneous type
+    TST_cilkrts_sf_t    //cilkrts_sf_t
   };
   
   /// \brief Structure that packs information about the type specifiers that

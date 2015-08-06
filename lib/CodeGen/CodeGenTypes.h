@@ -192,7 +192,9 @@ public:
                                              CXXDtorType Type);
 
   const CGFunctionInfo &arrangeFreeFunctionCall(const CallArgList &Args,
-                                                const FunctionType *Ty);
+                                                const FunctionType *Ty,
+                                                bool IstTask_parallelCall = false);
+
   const CGFunctionInfo &arrangeFreeFunctionCall(QualType ResTy,
                                                 const CallArgList &args,
                                                 FunctionType::ExtInfo info,

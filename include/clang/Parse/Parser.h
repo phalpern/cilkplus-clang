@@ -2286,13 +2286,10 @@ private:
 
   //===--------------------------------------------------------------------===//
   //Task_parallel:
+  //parse Task_parallel declarations
+  bool ParseTask_parallelDeclaration(DeclSpec &DS);
   // parse Task_parallel stmts
-  StmtResult ParseTask_parallelStatement(StmtVector &Stmts,
-                                                  bool OnlyStatement,
-                                                  ParsedAttributesWithRange &Attrs);
-  typedef SmallVector<Decl*, 32> FunctionDeclVector;
-  FunctionDeclVector SpawningFunctions;
-  bool isSpawningFunction(Decl *D);
+  StmtResult ParseTask_parallelStatement(StmtVector &Stmts, bool OnlyStatement, ParsedAttributesWithRange &Attrs);
 
 public:
   bool ParseUnqualifiedId(CXXScopeSpec &SS, bool EnteringContext,

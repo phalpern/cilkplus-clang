@@ -15,6 +15,7 @@
 #include "CGCXXABI.h"
 #include "CGCall.h"
 #include "CGOpenCLRuntime.h"
+#include "CGCilkPlusRuntime.h"
 #include "CGRecordLayout.h"
 #include "TargetInfo.h"
 #include "clang/AST/ASTContext.h"
@@ -388,7 +389,11 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
     case BuiltinType::OCLEvent:
       ResultType = CGM.getOpenCLRuntime().convertOpenCLSpecificType(Ty);
       break;
-    
+
+    case BuiltinType::CilkrtsSF:
+        ResultType = CGM.getCilkPlusRuntime().ConvertCilkrtsSFType(Ty, CGM);
+        break;
+
     case BuiltinType::Dependent:
 #define BUILTIN_TYPE(Id, SingletonId)
 #define PLACEHOLDER_TYPE(Id, SingletonId) \

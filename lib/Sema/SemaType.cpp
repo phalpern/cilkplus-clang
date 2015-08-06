@@ -1095,6 +1095,10 @@ static QualType ConvertDeclSpecToType(TypeProcessingState &state) {
     Result = Context.IntTy;
     declarator.setInvalidType(true);
     break;
+
+  case DeclSpec::TST_cilkrts_sf_t:
+    Result = Context.CilkrtsSFTy;
+    break;
   }
 
   // Handle complex types.

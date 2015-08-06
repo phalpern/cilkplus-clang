@@ -262,6 +262,15 @@ CodeGenTypes::arrangeFunctionDeclaration(const FunctionDecl *FD) {
   }
 
   assert(isa<FunctionProtoType>(FTy));
+
+  if(FD->isTask_parallelSpawningFunction()){
+      SmallVector<CanQualType, 16> argTypes;
+      argTypes.push_back(Context.CilkrtsSFTy);
+      CanQual<FunctionProtoType> FTP = FTy.getAs<FunctionProtoType>();
+      return ::arrangeLLVMFunctionInfo(*this,
+                                argTypes, FTP, FTP->getExtInfo());
+  }
+
   return arrangeFreeFunctionType(FTy.getAs<FunctionProtoType>());
 }
 
@@ -359,8 +368,15 @@ arrangeFreeFunctionLikeCall(CodeGenTypes &CGT,
 /// target-dependent in crazy ways.
 const CGFunctionInfo &
 CodeGenTypes::arrangeFreeFunctionCall(const CallArgList &args,
-                                      const FunctionType *fnType) {
-  return arrangeFreeFunctionLikeCall(*this, CGM, args, fnType, 0);
+                                     const FunctionType *fnType, bool IsTask_parallelCall) {
+   if(IsTask_parallelCall)
+   if(const FunctionProtoType *proto = dyn_cast<FunctionProtoType>(fnType))
+   {
+       RequiredArgs required = RequiredArgs(proto->getNumArgs() + 1);
+       return arrangeFreeFunctionCall(fnType->getResultType(),args,
+                                      fnType->getExtInfo(),required);
+   }
+   return arrangeFreeFunctionLikeCall(*this, CGM, args, fnType, 0);
 }
 
 /// A block function call is essentially a free-function call with an
@@ -2266,7 +2282,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
                                  const CallArgList &CallArgs,
                                  const Decl *TargetDecl,
                                  llvm::Instruction **callOrInvoke,
-                                 bool IsCilkSpawnCall) {
+                                 bool IsCilkSpawnCall, bool IsTask_parallelCall) {
   // FIXME: We no longer need the types from CallArgs; lift up and simplify.
   SmallVector<llvm::Value*, 16> Args;
 
@@ -2296,6 +2312,7 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
   CGFunctionInfo::const_arg_iterator info_it = CallInfo.arg_begin();
   for (CallArgList::const_iterator I = CallArgs.begin(), E = CallArgs.end();
        I != E; ++I, ++info_it) {
+
     const ABIArgInfo &ArgInfo = info_it->info;
     RValue RV = I->RV;
 
@@ -2554,6 +2571,11 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
   if (Builder.isNamePreserving() && !CI->getType()->isVoidTy())
     CI->setName("call");
 
+  if(IsTask_parallelCall){
+      //Fix the stack pointer before anything else is called after a
+      // call to _Task_parallel _Call function
+      CGM.getCilkPlusRuntime().EmitFixStackAfterCall(*this);
+  }
   // Emit any writebacks immediately.  Arguably this should happen
   // after any return-value munging.
   if (CallArgs.hasWritebacks())

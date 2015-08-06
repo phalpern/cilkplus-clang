@@ -5251,6 +5251,7 @@ QualType ASTReader::GetType(TypeID ID) {
     case PREDEF_TYPE_SAMPLER_ID:    T = Context.OCLSamplerTy;       break;
     case PREDEF_TYPE_EVENT_ID:      T = Context.OCLEventTy;         break;
     case PREDEF_TYPE_AUTO_DEDUCT:   T = Context.getAutoDeductType(); break;
+    case PREDEF_TYPE_CILKRTSSF_ID:  T = Context.CilkrtsSFTy;        break;
         
     case PREDEF_TYPE_AUTO_RREF_DEDUCT: 
       T = Context.getAutoRRefDeductType(); 

@@ -3765,6 +3765,29 @@ void CaptureVariablesInStmt(Sema &SemaRef, Stmt *S) {
   Builder.TraverseStmt(S);
 }
 
+void MarkFunctionasTaskSpawning(Sema &S)
+{
+  bool bRet = false;
+  DeclContext *DC = S.CurContext;
+  while (!DC->isFunctionOrMethod())
+    DC = DC->getParent();
+
+  Decl::Kind Kind = DC->getDeclKind();
+  if (Kind >= Decl::firstFunction && Kind <= Decl::lastFunction){
+      if(FunctionDecl::castFromDeclContext(DC)->isTask_parallelSpawningFunction()){
+        bRet = true;
+      }
+  }else if (Decl::Captured == Kind){
+    CapturedDecl::castFromDeclContext(DC)->setSpawning();
+    bRet = true;
+  }
+
+  if(bRet == false){
+    S.Diag(SourceLocation(), diag::err_spawn_invalid_decl)
+        << DC->getDeclKindName();
+  }
+}
+
 void MarkFunctionAsSpawning(Sema &S) {
   DeclContext *DC = S.CurContext;
   while (!DC->isFunctionOrMethod())
@@ -3772,7 +3795,7 @@ void MarkFunctionAsSpawning(Sema &S) {
 
   Decl::Kind Kind = DC->getDeclKind();
   if (Kind >= Decl::firstFunction && Kind <= Decl::lastFunction)
-    FunctionDecl::castFromDeclContext(DC)->setSpawning();
+         FunctionDecl::castFromDeclContext(DC)->setSpawning();
   else if (Decl::Captured == Kind)
     CapturedDecl::castFromDeclContext(DC)->setSpawning();
   else {
@@ -3930,8 +3953,7 @@ CilkSpawnDecl *Sema::BuildCilkSpawnDecl(Decl *D) {
      CilkSpawnDecl *Spawn = CilkSpawnDecl::Create(Context, DC, CS);
      DC->addDecl(Spawn);
 
-
-     MarkFunctionAsSpawning(*this);
+     MarkFunctionasTaskSpawning(*this);
      QualType QTy = Context.VoidTy;
 
      ExprResult cilkExpr = Owned(new (Context) CilkSpawnExpr(Spawn,QTy));
@@ -3941,47 +3963,17 @@ CilkSpawnDecl *Sema::BuildCilkSpawnDecl(Decl *D) {
      return Owned(Res.take());
 
  }
- /////////////////////////////////////////////////
- /// \brief ActOnTask_parallelCallStmt
- /// \param Expression with Task_parallel _Call
- /// \return StmtResult
- ///////////////////////////////////////////////////
- StmtResult Sema::ActOnTask_parallelCallStmt(Expr *E)
+ ///////////////////////////////////////////////////////
+ /// \brief Sema::ActOnTask_parallelCall
+ /// \param ER
+ /// \return
+ /// Set the block withhin which it is called as Spawning
+ /// and then act on expr
+ ////////////////////////////////////////////////////////
+ StmtResult Sema::ActOnTask_parallelCall(ExprResult &ER)
  {
-     if (!E)
-       return StmtError();
-
-     if (ExprWithCleanups *EWC = dyn_cast<ExprWithCleanups>(E))
-       E = EWC->getSubExpr();
-
-     if (CilkSpawnExpr *CSE = dyn_cast<CilkSpawnExpr>(E)) {
-       E = CSE->getSpawnExpr();
-       assert(E && "Expr expected");
-     }
-
-     Stmt *Body = 0;
-     {
-       // Capture variables used in this full expression.
-       ActOnCapturedRegionStart(E->getLocStart(), /*Scope*/ 0, CR_CilkSpawn,
-                                /*NumParams*/ 1);
-       CaptureVariablesInStmt(*this, E);
-       Body = ActOnCapturedRegionEnd(E).get();
-     }
-
-     DeclContext *DC = CurContext;
-     while (!(DC->isFunctionOrMethod() || DC->isRecord() || DC->isFileContext()))
-       DC = DC->getParent();
-
-     CapturedStmt *CS = cast<CapturedStmt>(Body);
-     CilkSpawnDecl *Spawn = CilkSpawnDecl::Create(Context, DC, CS);
-     DC->addDecl(Spawn);
-
      MarkFunctionAsSpawning(*this);
-     ExprResult cilkExpr = Owned(new (Context) CilkSpawnExpr(Spawn, E->getType()));
-     StmtResult Res = ActOnCEANExpr(cilkExpr.take());//or cast<Stmt>(cilkExpr.take());
-     if (Res.isInvalid())
-       return StmtError();
-     return Owned(Res.take());
+     return ActOnExprStmt(ER);
  }
 
 namespace {

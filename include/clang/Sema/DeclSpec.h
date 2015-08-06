@@ -295,6 +295,7 @@ public:
   static const TST TST_sampler_t = clang::TST_sampler_t;
   static const TST TST_event_t = clang::TST_event_t;
   static const TST TST_error = clang::TST_error;
+  static const TST TST_cilkrts_sf_t = clang::TST_cilkrts_sf_t;
 
   // type-qualifiers
   enum TQ {   // NOTE: These flags must be kept in sync with Qualifiers::TQ.
@@ -342,6 +343,8 @@ private:
   unsigned FS_virtual_specified : 1;
   unsigned FS_explicit_specified : 1;
   unsigned FS_noreturn_specified : 1;
+  //Spawn-specifier
+  unsigned FS_Spawn_specified : 1;
 
   // friend-specifier
   unsigned Friend_specified : 1;
@@ -384,6 +387,7 @@ private:
   SourceLocation TQ_constLoc, TQ_restrictLoc, TQ_volatileLoc, TQ_atomicLoc;
   SourceLocation FS_inlineLoc, FS_virtualLoc, FS_explicitLoc, FS_noreturnLoc;
   SourceLocation FS_forceinlineLoc;
+  SourceLocation FS_Task_Spawn;
   SourceLocation FriendLoc, ModulePrivateLoc, ConstexprLoc;
 
   WrittenBuiltinSpecs writtenBS;
@@ -426,6 +430,7 @@ public:
       FS_virtual_specified(false),
       FS_explicit_specified(false),
       FS_noreturn_specified(false),
+      FS_Spawn_specified(false),
       Friend_specified(false),
       Constexpr_specified(false),
       Attrs(attrFactory),
@@ -560,6 +565,9 @@ public:
   bool isNoreturnSpecified() const { return FS_noreturn_specified; }
   SourceLocation getNoreturnSpecLoc() const { return FS_noreturnLoc; }
 
+  bool SetTask_parallelSpawn(SourceLocation Loc);
+  bool isTaskSpawnSpecified() const { return FS_Spawn_specified; }
+
   void ClearFunctionSpecs() {
     FS_inline_specified = false;
     FS_inlineLoc = SourceLocation();
@@ -571,6 +579,9 @@ public:
     FS_explicitLoc = SourceLocation();
     FS_noreturn_specified = false;
     FS_noreturnLoc = SourceLocation();
+    FS_Spawn_specified = false;
+    FS_Task_Spawn = SourceLocation();
+
   }
 
   /// \brief Return true if any type-specifier has been found.
@@ -665,6 +676,7 @@ public:
 
   bool SetFriendSpec(SourceLocation Loc, const char *&PrevSpec,
                      unsigned &DiagID);
+
   bool setModulePrivateSpec(SourceLocation Loc, const char *&PrevSpec,
                             unsigned &DiagID);
   bool SetConstexprSpec(SourceLocation Loc, const char *&PrevSpec,

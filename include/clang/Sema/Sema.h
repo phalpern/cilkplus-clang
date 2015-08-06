@@ -3040,7 +3040,7 @@ public:
 
   /// \brief Task_parallel actions
   StmtResult ActOnTask_parallelSpawnStmt(StmtResult &AssociatedStmt);
-  StmtResult ActOnTask_parallelCallStmt(Expr *E);
+  StmtResult ActOnTask_parallelCall(ExprResult &ER);
 
 
   const VarDecl *getCopyElisionCandidate(QualType ReturnType, Expr *E,

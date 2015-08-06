@@ -1467,6 +1467,7 @@ private:
   bool IsLateTemplateParsed : 1;
   bool IsConstexpr : 1;
   bool IsSpawning: 1;
+  bool IsTask_parallelSpawningFunction : 1;
 
   /// \brief Indicates if the function was a definition but its body was
   /// skipped.
@@ -1557,6 +1558,7 @@ protected:
       HasImplicitReturnZero(false), IsLateTemplateParsed(false),
       IsConstexpr(isConstexprSpecified),
       IsSpawning(false),
+      IsTask_parallelSpawningFunction(false),
       HasSkippedBody(false),
       EndRangeLoc(NameInfo.getEndLoc()),
       TemplateOrSpecialization(),
@@ -1738,6 +1740,10 @@ public:
   /// \brief Whether this function is a Cilk spawning function.
   bool isSpawning() const { return IsSpawning; }
   void setSpawning() { IsSpawning = true; }
+
+  /// \brief Whether the function decl has a _Task_parallel _Call
+  bool isTask_parallelSpawningFunction() const { return IsTask_parallelSpawningFunction; }
+  void setTask_parallelSpawningFunction(){ IsTask_parallelSpawningFunction = true; }
 
   /// \brief Whether this function has been deleted.
   ///
@@ -3414,7 +3420,8 @@ class CilkSpawnDecl : public Decl {
   CapturedStmt *CapturedSpawn;
 
   CilkSpawnDecl(DeclContext *DC, CapturedStmt *Spawn);
-
+  bool bTask_parallel_Spawn;
+  bool bSpawnInTask_parallelSpawningFunction;
 public:
   static CilkSpawnDecl *Create(ASTContext &C, DeclContext *DC,
                                CapturedStmt *Spawn);

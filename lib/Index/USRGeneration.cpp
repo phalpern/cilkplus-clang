@@ -591,6 +591,7 @@ void USRGenerator::VisitType(QualType T) {
         case BuiltinType::OCLImage3d:
         case BuiltinType::OCLEvent:
         case BuiltinType::OCLSampler:
+        case BuiltinType::CilkrtsSF:
           IgnoreResults = true;
           return;
         case BuiltinType::ObjCId:

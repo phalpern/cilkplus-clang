@@ -171,6 +171,9 @@ BUILTIN_TYPE(OCLSampler, OCLSamplerTy)
 // OpenCL event_t.
 BUILTIN_TYPE(OCLEvent, OCLEventTy)
 
+// Cilkrts stack frame type
+BUILTIN_TYPE(CilkrtsSF, CilkrtsSFTy)
+
 // This represents the type of an expression whose type is
 // totally unknown, e.g. 'T::foo'.  It is permitted for this to
 // appear in situations where the structure of the type is

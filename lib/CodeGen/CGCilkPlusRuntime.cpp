@@ -204,6 +204,7 @@ public:
       TypeBuilder<uint16_t,               X>::get(C), // fpcsr
       TypeBuilder<uint16_t,               X>::get(C), // reserved
       TypeBuilder<__cilkrts_pedigree,     X>::get(C), // parent_pedigree
+      TypeBuilder<char*,                  X>::get(C), //resume_stack
       NULL);
     return Ty;
   }
@@ -217,7 +218,8 @@ public:
     mxcsr,
     fpcsr,
     reserved,
-    parent_pedigree
+    parent_pedigree,
+    resume_stack,
   };
 };
 
@@ -888,6 +890,58 @@ static Function *Get__cilkrts_enter_frame_fast_1(CodeGenFunction &CGF) {
 }
 
 
+///////////////////////////////////////////////////////////////////////
+/// \brief GetFixStackAfterTask_parallel_Call
+/// \param CGF
+/// \return
+///void __Task_parallel_FixStack(__cilkrts_stack_frame *sf)
+/// {
+///     if(sf->resume_stack){
+///        llvm.stackrestore(sf->resume_stack);
+///     }
+/// }
+/////////////////////////////////////////////////////////////////////////
+static Function *GetFixStackAfterTask_parallel_Call(CodeGenFunction &CGF)
+{
+  Function *Fn = 0;
+
+  if (GetOrCreateFunction<cilk_func>("__Task_parallel_FixStack", CGF, Fn))
+    return Fn;
+
+  // If we get here we need to add the function body
+  LLVMContext &Ctx = CGF.getLLVMContext();
+
+  Value *SF = Fn->arg_begin();
+
+  BasicBlock *Entry = BasicBlock::Create(Ctx, "entry", Fn),
+             *B1 = BasicBlock::Create(Ctx, "", Fn),
+             *Exit  = BasicBlock::Create(Ctx, "exit", Fn);
+  //Entry
+  {
+    //if(sf->resume_stack)
+    CGBuilderTy B(Entry);
+    Value *Cmp = B.CreateICmpNE(LoadField(B,SF,StackFrameBuilder::resume_stack),
+                        Constant::getNullValue(TypeBuilder<char*, false>::get(Ctx)));
+    B.CreateCondBr(Cmp,B1,Exit);
+  }
+
+  //B1
+  {
+    //llvm.stackrestore(sf->resume_stack);
+    CGBuilderTy B(Entry);
+    B.CreateCall(CGF.CGM.getIntrinsic(Intrinsic::stackrestore),
+                 LoadField(B,SF,StackFrameBuilder::resume_stack));
+    B.CreateBr(Exit);
+  }
+  //Exit
+  {
+    CGBuilderTy B(Entry);
+    B.CreateRetVoid();
+  }
+  Fn->addFnAttr(Attribute::InlineHint);
+  return Fn;
+}
+
 /// \brief Get or create a LLVM function for __cilk_parent_prologue.
 /// It is equivalent to the following C code
 ///
@@ -910,6 +964,9 @@ static Function *GetCilkParentPrologue(CodeGenFunction &CGF) {
 
   // __cilkrts_enter_frame_1(sf)
   B.CreateCall(CILKRTS_FUNC(enter_frame_1, CGF), SF);
+  //Set the resume_stack to Nullptr
+  StoreField(B,Constant::getNullValue(TypeBuilder<char*, false>::get(Ctx)),
+              SF,StackFrameBuilder::resume_stack);
 
   B.CreateRetVoid();
 
@@ -1069,7 +1126,44 @@ static llvm::Function *GetCilkHelperEpilogue(CodeGenFunction &CGF) {
 static const char *stack_frame_name = "__cilkrts_sf";
 
 static llvm::Value *LookupStackFrame(CodeGenFunction &CGF) {
-  return CGF.CurFn->getValueSymbolTable().lookup(stack_frame_name);
+      return CGF.CurFn->getValueSymbolTable().lookup(stack_frame_name);
+}
+
+llvm::Value *CGCilkPlusRuntime::LookupStackFrame(CodeGenFunction &CGF) {
+      return CGF.CurFn->getValueSymbolTable().lookup(stack_frame_name);
+}
+
+llvm::Type* CGCilkPlusRuntime::ConvertCilkrtsSFType(const Type *T, CodeGenModule &CGM)
+{
+    assert(T->isCilkrtsSFTy() && "Not a cilkrts stack frame type");
+
+    switch(cast<BuiltinType>(T)->getKind()){
+    default:
+        llvm_unreachable("Unexpected opencl builtin type!");
+        return 0;
+    case BuiltinType::CilkrtsSF:
+        return llvm::PointerType::get(StackFrameBuilder::get(CGM.getLLVMContext()),0);
+    }
+}
+
+void CGCilkPlusRuntime::BuildCilkrtsParam(CodeGenFunction &CGF, FunctionArgList &Params)
+{
+    const FunctionDecl *FD = cast<FunctionDecl>(CGF.CurGD.getDecl());
+    QualType T = CGF.getContext().CilkrtsSFTy;
+    ImplicitParamDecl *CilkrtsSFDecl
+      = ImplicitParamDecl::Create(CGF.getContext(), 0, FD->getLocation(),
+                                  &CGF.getContext().Idents.get("__cilkrts_sf_Addr"), T);
+    Params.push_back(CilkrtsSFDecl);
+    getCilkrtsSFParamDecl(CGF) = CilkrtsSFDecl;
+}
+
+void CGCilkPlusRuntime::EmitCilkrtsParam(CodeGenFunction &CGF)
+{
+    assert(getCilkrtsSFParamDecl(CGF) && "no cilkrts variable for this function");
+    Value *SF = CGF.Builder.CreateLoad(CGF.GetAddrOfLocalVar(getCilkrtsSFParamDecl(CGF)),
+                                                             stack_frame_name);
+    getCilkrtsSFValue(CGF) = SF;
+    CGF.CurFn->addFnAttr(llvm::Attribute::Task_parallel_Spawner);
 }
 
 /// \brief Create the __cilkrts_stack_frame for the spawning function.
@@ -1151,6 +1245,8 @@ void setHelperAttributes(CodeGenFunction &CGF,
 namespace clang {
 namespace CodeGen {
 
+static const char *cached_Task_parallel_worker_name = "__cilkrts_cached_TP_worker";
+
 void CodeGenFunction::EmitCilkSpawnDecl(const CilkSpawnDecl *D) {
   // Get the __cilkrts_stack_frame
   Value *SF = LookupStackFrame(*this);
@@ -1163,6 +1259,12 @@ void CodeGenFunction::EmitCilkSpawnDecl(const CilkSpawnDecl *D) {
   EmitBlock(Entry);
   {
     CGBuilderTy B(Entry);
+      if(CurFn->hasFnAttribute(llvm::Attribute::Task_parallel_Spawner)){
+       // if this spawn is inside the Task_parallel Spawning Function
+       // then check for the worker before and after spawn to fix stack
+          Value *W = LoadField(B,SF,StackFrameBuilder::worker);
+          W->setName(cached_Task_parallel_worker_name);
+      }
 
     // Need to save state before spawning
     Value *C = EmitCilkSetJmp(B, SF, *this);
@@ -1195,6 +1297,22 @@ void CodeGenFunction::EmitCilkSpawnDecl(const CilkSpawnDecl *D) {
 
     // Set other attributes.
     setHelperAttributes(*this, D->getSpawnStmt(), Helper);
+      if(CurFn->hasFnAttribute(llvm::Attribute::Task_parallel_Spawner)){
+          CGBuilderTy &B = Builder;
+          Value *W = LoadField(B,SF,StackFrameBuilder::worker);
+          Value *CachedWorker = CurFn->getValueSymbolTable().lookup(cached_Task_parallel_worker_name);
+          assert(CachedWorker && "The worker was not cached before");
+          Value *Cmp = B.CreateICmpNE(CachedWorker,W);
+          BasicBlock *SetStack = createBasicBlock("Task_parallel.cacheStack");
+          B.CreateCondBr(Cmp,SetStack,Exit);
+          EmitBlock(SetStack);
+          {
+             // Store stack pointer in the resume_stack slot
+             Value *StackAddr = B.CreateCall(CGM.getIntrinsic(Intrinsic::stacksave));
+             // sf->resume_stack = StackAddr;
+             StoreField(B, StackAddr, SF, StackFrameBuilder::resume_stack);
+          }
+      }
   }
   EmitBlock(Exit);
 }
@@ -1331,6 +1449,19 @@ public:
 };
 
 } // anonymous namespace
+
+
+///////////////////////////////////////////////////////////////////
+/// \brief CGCilkPlusRuntime::EmitFixStackAfterCall
+/// \param CGF
+///////////////////////////////////////////////////////////////////
+void CGCilkPlusRuntime::EmitFixStackAfterCall(CodeGenFunction &CGF)
+{
+  // Get the __cilkrts_stack_frame
+  Value *SF = getCilkrtsSFValue(CGF);
+  assert(SF && "null stack frame unexpected");
+  CGF.Builder.CreateCall(GetFixStackAfterTask_parallel_Call(CGF),SF);
+}
 
 /// \brief Emit code to create a Cilk stack frame for the parent function and
 /// release it in the end. This function should be only called once prior to

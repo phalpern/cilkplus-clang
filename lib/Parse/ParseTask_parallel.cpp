@@ -23,22 +23,15 @@
 #include "RAIIObjectsForParser.h"
 
 using namespace clang;
-
-//////////////////////////////
-/// \brief isSpawningFunction
-/// \param Decl
-/// \return
-//////////////////////////////
-bool Parser::isSpawningFunction(Decl *D)
+bool Parser::ParseTask_parallelDeclaration(DeclSpec &DS)
 {
-    bool bRet = false;
-    for(auto I = SpawningFunctions.begin(), E = SpawningFunctions.end(); I!= E; ++I){
-        if(*I == D){
-            bRet = true;
-            break;
-        }
-    }
-    return bRet;
+   assert(Tok.is(tok::kw__Task_parallel) && "Not a Task_parallel directive!");
+   bool isInvalid = true;
+   SourceLocation Loc = ConsumeToken();
+   Task_parallelDirectiveKind Dkind = getTask_parallelDirectiveKind(PP.getSpelling(Tok));
+   if(Dkind == Task_parallel_Call)
+        isInvalid = DS.SetTask_parallelSpawn(Loc);
+    return isInvalid;
 }
 
 ///////////////////////////////////////
@@ -69,37 +62,18 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
                 Res = StmtError();
                 break;
             }
-
+            //Create a captured Stmt so that it has its own cilkrts_stack_frame
             SourceLocation Loc = Tok.getLocation();
-
             ParseScope CapturedRegionScope(this, Scope::FnScope | Scope::DeclScope);
             Actions.ActOnCapturedRegionStart(Loc, getCurScope(), CR_Default,
                                              /*NumParams=*/1);
-
             StmtResult R = ParseCompoundStatement();
             CapturedRegionScope.Exit();
-
             if (R.isInvalid()) {
               Actions.ActOnCapturedRegionError();
               return StmtError();
             }
-
             Res = Actions.ActOnCapturedRegionEnd(R.get());
-//            if(Tok.is(tok::l_brace)){
-//                SourceLocation lb = ConsumeToken();
-//                Actions.ActOnStartOfCompoundStmt();
-//                StmtResult AssociatedStmt;
-//                AssociatedStmt = ParseStatement();
-//                if(Tok.is(tok::r_brace)){
-//                    SourceLocation rb = ConsumeToken();
-//                    Actions.ActOnFinishOfCompoundStmt();
-//                    Res = Actions.ActOnTask_parallelBlockStmt(AssociatedStmt.take(),lb,rb);
-//                }else{
-//                    Res = StmtError();
-//                }
-//            }else{
-//                Res = StmtError();
-//            }
         }
         break;
     case Task_parallel_Spawn:{
@@ -110,7 +84,7 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
                 Res = StmtError();
                 break;
             }
-            StmtResult AssociatedStmt;
+            StmtResult AssociatedStmt;//Capture the compound stmt with  _Spawn
             Actions.ActOnCapturedRegionStart(Loc, getCurScope(),CR_CilkSpawn,1);
             Actions.ActOnStartOfCompoundStmt();
             //Parse Stmt
@@ -145,25 +119,29 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
         break;
     case Task_parallel_Call:{
             ConsumeToken();
-            if(isDeclarationStatement() && !OnlyStatement){
-                SourceLocation DeclStart = Tok.getLocation(), DeclEnd;
-                DeclGroupPtrTy Decl = ParseDeclaration(Stmts, Declarator::BlockContext,
-                                                       DeclEnd, Attrs);
-                Res = Actions.ActOnDeclStmt(Decl, DeclStart, DeclEnd);
-                DeclGroupRef DG = Decl.get();
-                for(auto DI = DG.begin(), DE = DG.end(); DI != DE; ++DI)
-                    SpawningFunctions.push_back(*DI);
-            }else{
-                ExprResult exp = ParseCastExpression(false);
+           //FIXME: int a = _Task_parallel _Call spawner(b); is a declaration
+           // take care of this case
+            {
+                ExprResult exp = ParseExpression();
                 if(exp.isInvalid()) Res = StmtError();
                 else{
                     Expr *E = exp.get();
                     if(CallExpr *CE = dyn_cast<CallExpr>(E)){
-                        if(isSpawningFunction(CE->getCalleeDecl())){
-                          Res = Actions.ActOnTask_parallelCallStmt(E);
+                        if(FunctionDecl *FD = dyn_cast<FunctionDecl>(CE->getCalleeDecl())){
+                          if(FD->isTask_parallelSpawningFunction()){
+                              CE->setTask_parallel_CallLoc(Loc);
+                          }else{
+                              Res = StmtError();
+                              Diag(Tok, diag::err_Function_decl_not_Task_parallel_Call);
+                          }
                         }
                     }else{
-                        Res = Actions.ActOnCEANExpr(exp.take());//or cast<Stmt>(exp.take());
+                        Res = StmtError();
+                        Diag(Tok, diag::err_expected_call);
+                    }
+                    Res = Actions.ActOnTask_parallelCall(exp);
+                    if (Tok.is(tok::semi)) {
+                      ConsumeToken();
                     }
                 }
             }

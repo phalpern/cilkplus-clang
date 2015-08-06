@@ -2160,6 +2160,8 @@ class CallExpr : public Expr {
   SourceLocation RParenLoc;
   // Valid only if it is a Cilk spawn call
   SourceLocation CilkSpawnLoc;
+  //Valid only if it is a _Task_parallel _Call
+  SourceLocation Task_parallel_CallLoc;
 protected:
   // These versions of the constructor are for derived classes.
   CallExpr(const ASTContext& C, StmtClass SC, Expr *fn, unsigned NumPreArgs,
@@ -2287,6 +2289,10 @@ public:
   void setCilkSpawnLoc(SourceLocation Loc) { CilkSpawnLoc = Loc; }
   SourceLocation getCilkSpawnLoc() const LLVM_READONLY { return CilkSpawnLoc; }
   bool isCilkSpawnCall() const { return CilkSpawnLoc.isValid(); }
+
+  void setTask_parallel_CallLoc(SourceLocation Loc) { Task_parallel_CallLoc = Loc; }
+  SourceLocation getTask_parallel_CallLoc() const LLVM_READONLY { return Task_parallel_CallLoc; }
+  bool isTask_parallel_Call() const { return Task_parallel_CallLoc.isValid(); }
 
   static bool classof(const Stmt *T) {
     return T->getStmtClass() >= firstCallExprConstant &&

@@ -496,6 +496,7 @@ public:
     static bool classof(const CGCapturedStmtInfo *I) {
       return I->getKind() == CR_CilkSpawn;
     }
+
   private:
     /// \brief The receiver declariation.
     VarDecl *ReceiverDecl;
@@ -509,6 +510,10 @@ public:
 
   /// \brief Information about implicit syncs used during code generation.
   CGCilkImplicitSyncInfo *CurCGCilkImplicitSyncInfo;
+
+  /// __cilkrts_sf needs to be sent as an extra parameter in case of TaskBlock
+  ImplicitParamDecl *CilkrtsSFParamDecl;
+  llvm::Value *CilkrtsSFParamValue;
 
   /// BoundsChecking - Emit run-time bounds checks. Higher values mean
   /// potentially higher performance penalties.
@@ -2425,7 +2430,7 @@ public:
                   const CallArgList &Args,
                   const Decl *TargetDecl = 0,
                   llvm::Instruction **callOrInvoke = 0,
-                  bool IsCilkSpawnCall = false);
+                  bool IsCilkSpawnCall = false, bool IsTask_parallelCall = false);
 
   RValue EmitCall(QualType FnType, llvm::Value *Callee,
                   SourceLocation CallLoc,
@@ -2433,7 +2438,7 @@ public:
                   CallExpr::const_arg_iterator ArgBeg,
                   CallExpr::const_arg_iterator ArgEnd,
                   const Decl *TargetDecl = 0,
-                  bool IsCilkSpawnCall = false);
+                  bool IsCilkSpawnCall = false,bool IsTask_parallelCall = false);
   RValue EmitCallExpr(const CallExpr *E,
                       ReturnValueSlot ReturnValue = ReturnValueSlot());
 

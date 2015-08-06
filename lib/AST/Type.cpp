@@ -1544,6 +1544,7 @@ StringRef BuiltinType::getName(const PrintingPolicy &Policy) const {
   case OCLImage3d:        return "image3d_t";
   case OCLSampler:        return "sampler_t";
   case OCLEvent:          return "event_t";
+  case CilkrtsSF:         return "__cilkrts_stack_frame";
   }
   
   llvm_unreachable("Invalid builtin type.");

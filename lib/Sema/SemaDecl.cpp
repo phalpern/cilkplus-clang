@@ -7376,6 +7376,12 @@ Sema::ActOnFunctionDeclarator(Scope *S, Declarator &D, DeclContext *DC,
     AddToScope = false;
   }
 
+  if(getLangOpts().CilkPlus){
+      if(D.getDeclSpec().isTaskSpawnSpecified()){
+          NewFD->setTask_parallelSpawningFunction();
+      }
+  }
+
   return NewFD;
 }
 

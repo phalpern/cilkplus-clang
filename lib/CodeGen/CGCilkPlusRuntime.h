@@ -18,6 +18,7 @@
 #include "CGBuilder.h"
 #include "CGCall.h"
 #include "CGValue.h"
+#include "CodeGenFunction.h"
 #include "llvm/ADT/SmallPtrSet.h"
 
 namespace llvm {
@@ -54,6 +55,26 @@ public:
   void EmitCilkHelperPrologue(CodeGenFunction &CGF);
 
   void pushCilkImplicitSyncCleanup(CodeGenFunction &CGF);
+
+  //Task_parallel Call Support
+  void EmitFixStackAfterCall(CodeGenFunction &CGF);
+
+  llvm::Type *ConvertCilkrtsSFType(const Type *T, CodeGenModule &CGM);
+
+  llvm::Value *LookupStackFrame(CodeGenFunction &CGF);
+
+  llvm::Value *&getCilkrtsSFValue(CodeGenFunction &CGF){
+      return CGF.CilkrtsSFParamValue;
+  }
+
+  ImplicitParamDecl *&getCilkrtsSFParamDecl(CodeGenFunction &CGF){
+      return CGF.CilkrtsSFParamDecl;
+  }
+
+  void BuildCilkrtsParam(CodeGenFunction &CGF, FunctionArgList &params);
+
+  void EmitCilkrtsParam(CodeGenFunction &CGF);
+
 };
 
 /// \brief API to query if an implicit sync is necessary during code generation.

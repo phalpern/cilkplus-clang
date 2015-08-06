@@ -2993,7 +2993,7 @@ RValue CodeGenFunction::EmitCallExpr(const CallExpr *E,
 
   return EmitCall(E->getCallee()->getType(), Callee, E->getLocStart(),
                   ReturnValue, E->arg_begin(), E->arg_end(), TargetDecl,
-                  E->isCilkSpawnCall());
+                  E->isCilkSpawnCall(),E->isTask_parallel_Call());
 }
 
 LValue CodeGenFunction::EmitBinaryOperatorLValue(const BinaryOperator *E) {
@@ -3182,7 +3182,7 @@ RValue CodeGenFunction::EmitCall(QualType CalleeType, llvm::Value *Callee,
                                  CallExpr::const_arg_iterator ArgBeg,
                                  CallExpr::const_arg_iterator ArgEnd,
                                  const Decl *TargetDecl,
-                                 bool IsCilkSpawnCall) {
+                                 bool IsCilkSpawnCall, bool IsTask_parallelCall) {
   // Get the actual function type. The callee type will always be a pointer to
   // function type or a block pointer type.
   assert(CalleeType->isFunctionPointerType() &&
@@ -3245,11 +3245,19 @@ RValue CodeGenFunction::EmitCall(QualType CalleeType, llvm::Value *Callee,
   }
 
   CallArgList Args;
+
+  if(IsTask_parallelCall){//Add a place holder to pass the
+      QualType Ty = getContext().CilkrtsSFTy;
+      llvm::Value *SF = CGM.getCilkPlusRuntime().LookupStackFrame(*this);
+      Args.add(RValue::get(SF), Ty);
+  }
+
   EmitCallArgs(Args, dyn_cast<FunctionProtoType>(FnType), ArgBeg, ArgEnd,
                ForceColumnInfo);
 
-  const CGFunctionInfo &FnInfo =
-    CGM.getTypes().arrangeFreeFunctionCall(Args, FnType);
+   const CGFunctionInfo &FnInfo = IsTask_parallelCall ?
+           CGM.getTypes().arrangeFreeFunctionCall(Args, FnType, true) :
+        CGM.getTypes().arrangeFreeFunctionCall(Args, FnType);
 
   // C99 6.5.2.2p6:
   //   If the expression that denotes the called function has a type
@@ -3275,7 +3283,7 @@ RValue CodeGenFunction::EmitCall(QualType CalleeType, llvm::Value *Callee,
   }
 
   return EmitCall(FnInfo, Callee, ReturnValue, Args, TargetDecl,
-                  /*callOrInvoke=*/0, IsCilkSpawnCall);
+                  /*callOrInvoke=*/0, IsCilkSpawnCall,IsTask_parallelCall);
 }
 
 LValue CodeGenFunction::

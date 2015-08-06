@@ -3203,6 +3203,11 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       }
       break;
 
+    // _Task_parallel _Call
+    case tok::kw__Task_parallel:
+      isInvalid = ParseTask_parallelDeclaration(DS);
+      break;
+
     // Modules
     case tok::kw___module_private__:
       isInvalid = DS.setModulePrivateSpec(Loc, PrevSpec, DiagID);
