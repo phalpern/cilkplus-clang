@@ -2524,8 +2524,10 @@ RValue CodeGenFunction::EmitCall(const CGFunctionInfo &CallInfo,
 
   // If this call is a Cilk spawn call, then we need to emit the prologue
   // before emitting the real call.
-  if (IsCilkSpawnCall)
-    CGM.getCilkPlusRuntime().EmitCilkHelperPrologue(*this);
+  // Emitted just before emitting the body of the spawn helper function just after
+  //EmitCilkHelperStackFrame inside of CodeGenFunction::CGCilkSpawnInfo::EmitBody(CodeGenFunction &CGF, Stmt *S)
+//  if (IsCilkSpawnCall)
+//    CGM.getCilkPlusRuntime().EmitCilkHelperPrologue(*this);
 
   llvm::BasicBlock *InvokeDest = 0;
   if (!Attrs.hasAttribute(llvm::AttributeSet::FunctionIndex,

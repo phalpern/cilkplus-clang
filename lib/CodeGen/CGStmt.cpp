@@ -1846,10 +1846,6 @@ CodeGenFunction::EmitCapturedStmt(const CapturedStmt &S, CapturedRegionKind K) {
   llvm::Function *F = CGF.GenerateCapturedStmtFunction(CD, RD, S.getLocStart());
   delete CGF.CapturedStmtInfo;
 
-  if(getLangOpts().CilkPlus && CD->isSpawning()){//Not the spawning CapturedStmt however
-      //Task spawn captured Stmt
-      CGM.getCilkPlusRuntime().EmitCilkHelperPrologue(*this);
-  }
   // Emit call to the helper function.
   EmitCallOrInvoke(F, CapStruct.getAddress());
 
@@ -2178,6 +2174,7 @@ CodeGenFunction::CGCilkSpawnInfo::EmitBody(CodeGenFunction &CGF, Stmt *S) {
   }
 
   CGF.CGM.getCilkPlusRuntime().EmitCilkHelperStackFrame(CGF);
+  CGF.CGM.getCilkPlusRuntime().EmitCilkHelperPrologue(CGF);
   CGCapturedStmtInfo::EmitBody(CGF, S);
 }
 
