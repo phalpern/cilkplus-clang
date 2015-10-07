@@ -47,15 +47,14 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
     SourceLocation Loc = ConsumeToken();
     Task_parallelDirectiveKind Dkind = getTask_parallelDirectiveKind(PP.getSpelling(Tok));
     const char *SemiError = 0;
+    bool NoCilkPlus = false;
     
     switch(Dkind){
     case Task_parallel_Block:{
             ConsumeToken();
             if (!getLangOpts().CilkPlus) {
                 Diag(Tok, diag::err_cilkplus_disable);
-                SkipUntil(tok::r_brace);
-                Res = StmtError();
-                break;
+                NoCilkPlus = true;
             }
             if (Tok.isNot(tok::l_brace)) {
                 Diag(Tok, diag::err_expected_lbrace);
@@ -80,9 +79,7 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
             ConsumeToken();
             if (!getLangOpts().CilkPlus) {
                 Diag(Tok, diag::err_cilkplus_disable);
-                SkipUntil(tok::r_brace);
-                Res = StmtError();
-                break;
+                NoCilkPlus = true;
             }
             StmtResult AssociatedStmt;//Capture the compound stmt with  _Spawn
             Actions.ActOnCapturedRegionStart(Loc, getCurScope(),CR_CilkSpawn,1);
@@ -100,9 +97,7 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
     case Task_parallel_Sync:
             if (!getLangOpts().CilkPlus) {
                 Diag(Tok, diag::err_cilkplus_disable);
-                SkipUntil(tok::semi);
-                Res = StmtError();
-                break;
+                NoCilkPlus = true;
             }
             Res = Actions.ActOnCilkSyncStmt(ConsumeToken());
             SemiError = "_Task_parallel _Sync";
@@ -158,5 +153,7 @@ StmtResult Parser::ParseTask_parallelStatement(StmtVector &Stmts,
         break;
     }
 
+    if (NoCilkPlus)
+        Res = StmtError();
     return Res;
 }

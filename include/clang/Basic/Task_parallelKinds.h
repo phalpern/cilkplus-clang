@@ -27,6 +27,7 @@ enum Task_parallelDirectiveKind {
   Task_parallel##Name,
 #include "clang/Basic/Task_parallelKinds.def"
   NUM_TP_DIRECTIVES
+#undef TP_DIRECTIVE
 };
 
 Task_parallelDirectiveKind getTask_parallelDirectiveKind(llvm::StringRef Str){
@@ -35,6 +36,7 @@ Task_parallelDirectiveKind getTask_parallelDirectiveKind(llvm::StringRef Str){
              .Case(#Name, Task_parallel##Name)
   #include "clang/Basic/Task_parallelKinds.def"
              .Default(Task_parallel_unknown);
+  #undef TP_DIRECTIVE
   }
 
 const char *getTPDirectiveName(Task_parallelDirectiveKind Kind){
@@ -47,6 +49,7 @@ const char *getTPDirectiveName(Task_parallelDirectiveKind Kind){
   #include "clang/Basic/Task_parallelKinds.def"
     case NUM_TP_DIRECTIVES:
       break;
+  #undef TP_DIRECTIVE
     }
     llvm_unreachable("Invalid Task_parallel directive kind");
   }
