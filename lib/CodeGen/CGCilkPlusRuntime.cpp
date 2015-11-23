@@ -1163,7 +1163,8 @@ void CGCilkPlusRuntime::EmitCilkrtsParam(CodeGenFunction &CGF)
     Value *SF = CGF.Builder.CreateLoad(CGF.GetAddrOfLocalVar(getCilkrtsSFParamDecl(CGF)),
                                                              stack_frame_name);
     getCilkrtsSFValue(CGF) = SF;
-    CGF.CurFn->addFnAttr(llvm::Attribute::Task_parallel_Spawner);
+    CGF.CurFnIsSpawningFunction = true;
+//    CGF.CurFn->addFnAttr(llvm::Attribute::Task_parallel_Spawner);
 }
 
 /// \brief Create the __cilkrts_stack_frame for the spawning function.
@@ -1259,12 +1260,13 @@ void CodeGenFunction::EmitCilkSpawnDecl(const CilkSpawnDecl *D) {
   EmitBlock(Entry);
   {
     CGBuilderTy B(Entry);
-      if(CurFn->hasFnAttribute(llvm::Attribute::Task_parallel_Spawner)){
-       // if this spawn is inside the Task_parallel Spawning Function
-       // then check for the worker before and after spawn to fix stack
-          Value *W = LoadField(B,SF,StackFrameBuilder::worker);
-          W->setName(cached_Task_parallel_worker_name);
-      }
+//      if(CurFn->hasFnAttribute(llvm::Attribute::Task_parallel_Spawner)){
+    if (CurFnIsSpawningFunction) {
+      // if this spawn is inside the Task_parallel Spawning Function
+      // then check for the worker before and after spawn to fix stack
+      Value *W = LoadField(B,SF,StackFrameBuilder::worker);
+      W->setName(cached_Task_parallel_worker_name);
+    }
 
     // Need to save state before spawning
     Value *C = EmitCilkSetJmp(B, SF, *this);
@@ -1297,22 +1299,23 @@ void CodeGenFunction::EmitCilkSpawnDecl(const CilkSpawnDecl *D) {
 
     // Set other attributes.
     setHelperAttributes(*this, D->getSpawnStmt(), Helper);
-      if(CurFn->hasFnAttribute(llvm::Attribute::Task_parallel_Spawner)){
-          CGBuilderTy &B = Builder;
-          Value *W = LoadField(B,SF,StackFrameBuilder::worker);
-          Value *CachedWorker = CurFn->getValueSymbolTable().lookup(cached_Task_parallel_worker_name);
-          assert(CachedWorker && "The worker was not cached before");
-          Value *Cmp = B.CreateICmpNE(CachedWorker,W);
-          BasicBlock *SetStack = createBasicBlock("Task_parallel.cacheStack");
-          B.CreateCondBr(Cmp,SetStack,Exit);
-          EmitBlock(SetStack);
-          {
-             // Store stack pointer in the resume_stack slot
-             Value *StackAddr = B.CreateCall(CGM.getIntrinsic(Intrinsic::stacksave));
-             // sf->resume_stack = StackAddr;
-             StoreField(B, StackAddr, SF, StackFrameBuilder::resume_stack);
-          }
+//      if(CurFn->hasFnAttribute(llvm::Attribute::Task_parallel_Spawner)){
+    if (CurFnIsSpawningFunction) {
+      CGBuilderTy &B = Builder;
+      Value *W = LoadField(B,SF,StackFrameBuilder::worker);
+      Value *CachedWorker = CurFn->getValueSymbolTable().lookup(cached_Task_parallel_worker_name);
+      assert(CachedWorker && "The worker was not cached before");
+      Value *Cmp = B.CreateICmpNE(CachedWorker,W);
+      BasicBlock *SetStack = createBasicBlock("Task_parallel.cacheStack");
+      B.CreateCondBr(Cmp,SetStack,Exit);
+      EmitBlock(SetStack);
+      {
+        // Store stack pointer in the resume_stack slot
+        Value *StackAddr = B.CreateCall(CGM.getIntrinsic(Intrinsic::stacksave));
+        // sf->resume_stack = StackAddr;
+        StoreField(B, StackAddr, SF, StackFrameBuilder::resume_stack);
       }
+    }
   }
   EmitBlock(Exit);
 }

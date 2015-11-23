@@ -527,6 +527,7 @@ void CodeGenFunction::StartFunction(GlobalDecl GD,
   CurFuncDecl = (D ? D->getNonClosureContext() : 0);
   FnRetTy = RetTy;
   CurFn = Fn;
+  CurFnIsSpawningFunction = false;
   CurFnInfo = &FnInfo;
   assert(CurFn->isDeclaration() && "Function already has body?");
 

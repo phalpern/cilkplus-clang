@@ -149,6 +149,9 @@ public:
   QualType FnRetTy;
   llvm::Function *CurFn;
 
+  /// CurFnIsSpawningFunction - true if function is decorated with CPLEX `_Task_parallel _Call`
+  bool CurFnIsSpawningFunction;
+
   /// CurGD - The GlobalDecl for the current function being compiled.
   GlobalDecl CurGD;
 
