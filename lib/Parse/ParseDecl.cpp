@@ -4177,6 +4177,12 @@ void Parser::ParseEnumBody(SourceLocation StartLoc, Decl *EnumDecl) {
   }
 }
 
+/// ParseReductionSpecifier
+///
+///    reduction-specifier: [CPLEX WP 2015-09-14 6.2]
+///      '_Reduction' identifier[opt] '{' reduction-aspect-list '}'
+///      '_Reduction' identifier
+///
 void Parser::ParseReductionSpecifier(SourceLocation StartLoc, DeclSpec &DS,
                                      const ParsedTemplateInfo &TemplateInfo,
                                      AccessSpecifier AS, DeclSpecContext DSC) {
@@ -4210,8 +4216,6 @@ void Parser::ParseReductionSpecifier(SourceLocation StartLoc, DeclSpec &DS,
   // Reduction definitions should not be parsed in a trailing-return-type.
   bool AllowDeclaration = DSC != DSC_trailing;
 
-//  CXXScopeSpec &SS = DS.getTypeSpecScope();
-
   // Must have either '_Reduction name' or '_Reduction {...}'.
   if (Tok.isNot(tok::identifier) && Tok.isNot(tok::l_brace)) {
     Diag(Tok, diag::err_expected_ident_lbrace);
@@ -4236,11 +4240,12 @@ void Parser::ParseReductionSpecifier(SourceLocation StartLoc, DeclSpec &DS,
 
   TypeResult BaseType;
 
-  // There are four options here.  If we have 'friend _Reduction foo;' then this is a
-  // friend declaration, and cannot have an accompanying definition. If we have
-  // '_Reduction foo;', then this is a forward declaration.  If we have
-  // '_Reduction foo {...' then this is a definition. Otherwise we have something
-  // like '_Reduction foo xyz', a reference.
+  // There are four options here:
+  //  1. If we have 'friend _Reduction foo;' then this is a
+  //     friend declaration, and cannot have an accompanying definition.
+  //  2. If we have '_Reduction foo;', then this is a forward declaration.
+  //  3. If we have '_Reduction foo {...' then this is a definition.
+  //  4. Otherwise we have something like '_Reduction foo xyz', a reference.
 
   Sema::TagUseKind TUK;
   if (!AllowDeclaration) {
@@ -4307,7 +4312,7 @@ void Parser::ParseReductionSpecifier(SourceLocation StartLoc, DeclSpec &DS,
 
 /// ParseReductionBody - Parse a {} enclosed reduction-aspect-list
 ///
-///  reduction-aspect-list:
+///  reduction-aspect-list:  [CPLEX WP 2015-09-14 6.2]
 ///    reduction-aspect
 ///    reduction-aspect-list , reduction-aspect
 ///
@@ -4347,7 +4352,54 @@ void Parser::ParseReductionBody(SourceLocation StartLoc, Decl *ReductionDecl) {
   BalancedDelimiterTracker T(*this, tok::l_brace);
   T.consumeOpen();
 
-  
+  enum ErrState { noErr, badAspectName, badAspectValue };
+
+  ErrState err = noErr;
+  while (!err && !Tok.is(tok::r_brace)) {
+    switch (Tok.getKind()) {
+      case tok::kw__Type: // type-name
+        err = badAspectValue;  // Temporary: scan until comma
+        break;
+      case tok::kw__Combiner: // combiner-operation
+        err = badAspectValue;  // Temporary: scan until comma
+        break;
+      case tok::kw__Initializer: // initializer
+        err = badAspectValue;  // Temporary: scan until comma
+        break;
+      case tok::kw__Finalizer: // constant-expression
+        err = badAspectValue;  // Temporary: scan until comma
+        break;
+      case tok::kw__Order: // reduction-order-constraint
+        err = badAspectValue;  // Temporary: scan until comma
+        break;
+      default:
+        Diag(Tok, diag::err_expected_rbrace);
+        err = badAspectName;
+    }
+
+    switch (err) {
+      case noErr: break;
+      case badAspectName:
+        SkipUntil(tok::r_brace, /* StopAtSemi | */ StopBeforeMatch);
+        break;
+      case badAspectValue:
+        if (SkipUntil(tok::comma, tok::r_brace, StopAtSemi | StopBeforeMatch)) {
+          if (Tok.is(tok::comma))
+            ConsumeToken();
+          err = noErr;  // Continue parsing aspect list
+        }
+        else {
+          Diag(Tok, diag::err_expected_rbrace_or_comma);
+          if (Tok.is(tok::semi)) {
+            ConsumeToken();
+            err = noErr;  // Continue parsing as if comma were seen
+            break;
+          }
+          // TBD: More recovery work should go here
+          SkipUntil(tok::r_brace, /* StopAtSemi | */ StopBeforeMatch);
+        }
+    }
+  }
 
   T.consumeClose();
 
