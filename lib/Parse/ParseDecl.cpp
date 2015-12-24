@@ -4354,23 +4354,45 @@ void Parser::ParseReductionBody(SourceLocation StartLoc, Decl *ReductionDecl) {
 
   enum ErrState { noErr, badAspectName, badAspectValue };
 
+  auto ParseAspectValue = [&]() -> ErrState {
+    if (SkipUntil(tok::comma, tok::r_brace, StopAtSemi | StopBeforeMatch)) {
+      if (Tok.is(tok::comma))
+        ConsumeToken();
+      return noErr;
+    }
+    else if (Tok.is(tok::semi)) {
+      // Found a semicolon instead of a comma
+      Diag(Tok, diag::err_expected_comma);
+      ConsumeToken();
+      return noErr;  // Continue parsing as if comma were seen
+    }
+    else
+      return badAspectValue;
+  };
+
+  auto ParseReductionType        = ParseAspectValue;
+  auto ParseReductionCombiner    = ParseAspectValue;
+  auto ParseReductionInitializer = ParseAspectValue;
+  auto ParseReductionFinalizer   = ParseAspectValue;
+  auto ParseReductionOrder       = ParseAspectValue;
+
   ErrState err = noErr;
   while (!err && !Tok.is(tok::r_brace)) {
     switch (Tok.getKind()) {
       case tok::kw__Type: // type-name
-        err = badAspectValue;  // Temporary: scan until comma
+        err = ParseReductionType();
         break;
       case tok::kw__Combiner: // combiner-operation
-        err = badAspectValue;  // Temporary: scan until comma
+        err = ParseReductionCombiner();
         break;
       case tok::kw__Initializer: // initializer
-        err = badAspectValue;  // Temporary: scan until comma
+        err = ParseReductionInitializer();
         break;
       case tok::kw__Finalizer: // constant-expression
-        err = badAspectValue;  // Temporary: scan until comma
+        err = ParseReductionFinalizer();
         break;
       case tok::kw__Order: // reduction-order-constraint
-        err = badAspectValue;  // Temporary: scan until comma
+        err = ParseReductionOrder();
         break;
       default:
         Diag(Tok, diag::err_expected_rbrace);
@@ -4383,21 +4405,10 @@ void Parser::ParseReductionBody(SourceLocation StartLoc, Decl *ReductionDecl) {
         SkipUntil(tok::r_brace, /* StopAtSemi | */ StopBeforeMatch);
         break;
       case badAspectValue:
-        if (SkipUntil(tok::comma, tok::r_brace, StopAtSemi | StopBeforeMatch)) {
-          if (Tok.is(tok::comma))
-            ConsumeToken();
-          err = noErr;  // Continue parsing aspect list
-        }
-        else {
-          Diag(Tok, diag::err_expected_rbrace_or_comma);
-          if (Tok.is(tok::semi)) {
-            ConsumeToken();
-            err = noErr;  // Continue parsing as if comma were seen
-            break;
-          }
-          // TBD: More recovery work should go here
-          SkipUntil(tok::r_brace, /* StopAtSemi | */ StopBeforeMatch);
-        }
+        Diag(Tok, diag::err_expected_rbrace_or_comma);
+        // TBD: More recovery work should go here
+        SkipUntil(tok::r_brace, /* StopAtSemi | */ StopBeforeMatch);
+        break;
     }
   }
 
