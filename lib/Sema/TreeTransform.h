@@ -766,6 +766,11 @@ public:
     return SemaRef.Context.getTypeDeclType(Record);
   }
 
+  /// \brief Build a new reduction
+  QualType RebuildReductionType(RecordDecl *Reduction) {
+    return SemaRef.Context.getTypeDeclType(Reduction);
+  }
+
   /// \brief Build a new Enum type.
   QualType RebuildEnumType(EnumDecl *Enum) {
     return SemaRef.Context.getTypeDeclType(Enum);
@@ -4750,6 +4755,30 @@ QualType TreeTransform<Derived>::TransformRecordType(TypeLocBuilder &TLB,
   }
 
   RecordTypeLoc NewTL = TLB.push<RecordTypeLoc>(Result);
+  NewTL.setNameLoc(TL.getNameLoc());
+
+  return Result;
+}
+
+template<typename Derived>
+QualType TreeTransform<Derived>::TransformReductionType(TypeLocBuilder &TLB,
+                                                        ReductionTypeLoc TL) {
+  const ReductionType *T = TL.getTypePtr();
+  ReductionDecl *Reduction
+    = cast_or_null<ReductionDecl>(getDerived().TransformDecl(TL.getNameLoc(),
+                                                             T->getDecl()));
+  if (!Reduction)
+    return QualType();
+
+  QualType Result = TL.getType();
+  if (getDerived().AlwaysRebuild() ||
+      Reduction != T->getDecl()) {
+    Result = getDerived().RebuildReductionType(Reduction);
+    if (Result.isNull())
+      return QualType();
+  }
+
+  ReductionTypeLoc NewTL = TLB.push<ReductionTypeLoc>(Result);
   NewTL.setNameLoc(TL.getNameLoc());
 
   return Result;

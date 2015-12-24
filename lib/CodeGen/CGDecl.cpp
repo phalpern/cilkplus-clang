@@ -81,6 +81,7 @@ void CodeGenFunction::EmitDecl(const Decl &D) {
   case Decl::Function:  // void X();
   case Decl::Record:    // struct/union/class X;
   case Decl::Enum:      // enum X;
+  case Decl::Reduction: // _Reduction X;
   case Decl::EnumConstant: // enum ? { X = ? }
   case Decl::CXXRecord: // struct/union/class X; [C++]
   case Decl::StaticAssert: // static_assert(X, ""); [C++0x]

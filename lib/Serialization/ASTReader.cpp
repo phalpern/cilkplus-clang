@@ -5088,6 +5088,9 @@ void TypeLocReader::VisitAutoTypeLoc(AutoTypeLoc TL) {
 void TypeLocReader::VisitRecordTypeLoc(RecordTypeLoc TL) {
   TL.setNameLoc(ReadSourceLocation(Record, Idx));
 }
+void TypeLocReader::VisitReductionTypeLoc(ReductionTypeLoc TL) {
+  TL.setNameLoc(ReadSourceLocation(Record, Idx));
+}
 void TypeLocReader::VisitEnumTypeLoc(EnumTypeLoc TL) {
   TL.setNameLoc(ReadSourceLocation(Record, Idx));
 }

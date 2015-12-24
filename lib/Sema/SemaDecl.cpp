@@ -357,6 +357,7 @@ DeclSpec::TST Sema::isTagName(IdentifierInfo &II, Scope *S) {
       case TTK_Union:  return DeclSpec::TST_union;
       case TTK_Class:  return DeclSpec::TST_class;
       case TTK_Enum:   return DeclSpec::TST_enum;
+      case TTK__Reduction: return DeclSpec::TST__Reduction;
       }
     }
 
@@ -535,6 +536,11 @@ static bool isTagTypeWithMissingTag(Sema &SemaRef, LookupResult &Result,
       case TTK_Union:
         TagName = "union";
         FixItTagName = "union ";
+        break;
+
+      case TTK__Reduction:
+        TagName = "_Reduction";
+        FixItTagName = "_Reduction ";
         break;
     }
 
@@ -10963,7 +10969,9 @@ CreateNewDecl:
         ED->setIntegerType(QualType(EnumUnderlying.get<const Type*>(), 0));
       ED->setPromotionType(ED->getIntegerType());
     }
-
+  } else if (Kind == TTK__Reduction) {
+    New = ReductionDecl::Create(Context, SearchDC, KWLoc, Loc, Name,
+                                cast_or_null<ReductionDecl>(PrevDecl));
   } else {
     // struct/union/class
 
@@ -12921,6 +12929,13 @@ void Sema::ActOnEnumBody(SourceLocation EnumLoc, SourceLocation LBraceLoc,
   // Now that the enum type is defined, ensure it's not been underaligned.
   if (Enum->hasAttrs())
     CheckAlignasUnderalignment(Enum);
+}
+
+void Sema::ActOnReductionBody(SourceLocation ReductionLoc, SourceLocation LBraceLoc,
+                              SourceLocation RBraceLoc, Decl *ReductionDeclX,
+                              Scope *S) {
+  ReductionDecl *Reduction = cast<ReductionDecl>(ReductionDeclX);
+  Reduction->completeDefinition();
 }
 
 Decl *Sema::ActOnFileScopeAsmDecl(Expr *expr,

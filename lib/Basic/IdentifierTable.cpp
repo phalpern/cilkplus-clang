@@ -143,7 +143,7 @@ static void AddKeyword(StringRef Keyword,
   else if (LangOpts.CPlusPlus && (Flags & KEYCXX11)) AddResult = 3;
   else if (LangOpts.CilkPlus && (Flags & KEYCILKPLUS)) AddResult = 1;
   else if (LangOpts.Float128 && (Flags & KEYFLOAT128)) AddResult = 1;
-  else if ((Flags & KEYCPLEX)) AddResult = 1;
+  else if (!LangOpts.CPlusPlus && (Flags & KEYCPLEX)) AddResult = 1;
 
   // Don't add this keyword under MicrosoftMode.
   if (LangOpts.MicrosoftMode && (Flags & KEYNOMS))

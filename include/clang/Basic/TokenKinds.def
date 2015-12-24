@@ -361,8 +361,20 @@ KEYWORD(_Cilk_sync                  , KEYCILKPLUS)
 KEYWORD(_Cilk_for                   , KEYCILKPLUS)
 
 //Intel Cplex
-KEYWORD(_Task_parallel              ,KEYCPLEX)
-
+KEYWORD(_Task_parallel              , KEYCPLEX)
+KEYWORD(_Reduction                  , KEYCPLEX)
+KEYWORD(_Type                       , KEYCPLEX)
+KEYWORD(_Combiner                   , KEYCPLEX)
+KEYWORD(_Initializer                , KEYCPLEX)
+KEYWORD(_Finalizer                  , KEYCPLEX)
+KEYWORD(_Order                      , KEYCPLEX)
+KEYWORD(_And                        , KEYCPLEX)
+KEYWORD(_Or                         , KEYCPLEX)
+KEYWORD(_Min                        , KEYCPLEX)
+KEYWORD(_Max                        , KEYCPLEX)
+KEYWORD(_Last                       , KEYCPLEX)
+KEYWORD(_Commutative                , KEYCPLEX)
+KEYWORD(_Associative                , KEYCPLEX)
 
 // GNU and MS Type Traits
 KEYWORD(__has_nothrow_assign          , KEYCXX)

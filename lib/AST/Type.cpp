@@ -1365,6 +1365,7 @@ TypeWithKeyword::getKeywordForTypeSpec(unsigned TypeSpec) {
   case TST_interface: return ETK_Interface;
   case TST_union: return ETK_Union;
   case TST_enum: return ETK_Enum;
+  case TST__Reduction: return ETK__Reduction;
   }
 }
 
@@ -1376,6 +1377,7 @@ TypeWithKeyword::getTagTypeKindForTypeSpec(unsigned TypeSpec) {
   case TST_interface: return TTK_Interface;
   case TST_union: return TTK_Union;
   case TST_enum: return TTK_Enum;
+  case TST__Reduction: return TTK__Reduction;
   }
   
   llvm_unreachable("Type specifier is not a tag type kind.");
@@ -1389,6 +1391,7 @@ TypeWithKeyword::getKeywordForTagTypeKind(TagTypeKind Kind) {
   case TTK_Interface: return ETK_Interface;
   case TTK_Union: return ETK_Union;
   case TTK_Enum: return ETK_Enum;
+  case TTK__Reduction: return ETK__Reduction;
   }
   llvm_unreachable("Unknown tag type kind.");
 }
@@ -1401,6 +1404,7 @@ TypeWithKeyword::getTagTypeKindForKeyword(ElaboratedTypeKeyword Keyword) {
   case ETK_Interface: return TTK_Interface;
   case ETK_Union: return TTK_Union;
   case ETK_Enum: return TTK_Enum;
+  case ETK__Reduction: return TTK__Reduction;
   case ETK_None: // Fall through.
   case ETK_Typename:
     llvm_unreachable("Elaborated type keyword is not a tag type kind.");
@@ -1419,6 +1423,7 @@ TypeWithKeyword::KeywordIsTagTypeKind(ElaboratedTypeKeyword Keyword) {
   case ETK_Interface:
   case ETK_Union:
   case ETK_Enum:
+  case ETK__Reduction:
     return true;
   }
   llvm_unreachable("Unknown elaborated type keyword.");
@@ -1434,6 +1439,7 @@ TypeWithKeyword::getKeywordName(ElaboratedTypeKeyword Keyword) {
   case ETK_Interface: return "__interface";
   case ETK_Union:  return "union";
   case ETK_Enum:   return "enum";
+  case ETK__Reduction: return "_Reduction";
   }
 
   llvm_unreachable("Unknown elaborated type keyword.");
@@ -2163,6 +2169,7 @@ static CachedProperties computeCachedProperties(const Type *T) {
     return CachedProperties(ExternalLinkage, false);
 
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum: {
     const TagDecl *Tag = cast<TagType>(T)->getDecl();
 
@@ -2261,6 +2268,7 @@ static LinkageInfo computeLinkageInfo(const Type *T) {
     return LinkageInfo::external();
 
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum:
     return cast<TagType>(T)->getDecl()->getLinkageAndVisibility();
 

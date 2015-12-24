@@ -3335,6 +3335,22 @@ void EnumDecl::setInstantiationOfMemberEnum(ASTContext &C, EnumDecl *ED,
 }
 
 //===----------------------------------------------------------------------===//
+// ReductionDecl Implementation
+//===----------------------------------------------------------------------===//
+
+ReductionDecl* ReductionDecl::Create(ASTContext &C, DeclContext *DC,
+                                     SourceLocation StartLoc, SourceLocation IdLoc,
+                                     IdentifierInfo *Id,
+                                     ReductionDecl *PrevDecl) {
+  ReductionDecl *Reduction = new (C) ReductionDecl(DC, StartLoc, IdLoc, Id, PrevDecl);
+  return Reduction;
+}
+
+void ReductionDecl::completeDefinition() {
+  RecordDecl::completeDefinition();
+}
+
+//===----------------------------------------------------------------------===//
 // RecordDecl Implementation
 //===----------------------------------------------------------------------===//
 

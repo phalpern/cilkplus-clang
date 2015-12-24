@@ -1486,6 +1486,7 @@ static const char *GetCompletionTypeString(QualType T,
           case TTK_Class:  return "class <anonymous>";
           case TTK_Union:  return "union <anonymous>";
           case TTK_Enum:   return "enum <anonymous>";
+          case TTK__Reduction: return "_Reduction <anonymous>";
           }
         }
   }
@@ -2981,6 +2982,7 @@ CXCursorKind clang::getCursorKindForDecl(const Decl *D) {
           case TTK_Class:  return CXCursor_ClassDecl;
           case TTK_Union:  return CXCursor_UnionDecl;
           case TTK_Enum:   return CXCursor_EnumDecl;
+          case TTK__Reduction: return CXCursor__ReductionDecl;
         }
       }
   }

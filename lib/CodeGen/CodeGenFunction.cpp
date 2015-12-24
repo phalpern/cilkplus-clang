@@ -146,6 +146,7 @@ TypeEvaluationKind CodeGenFunction::getEvaluationKind(QualType type) {
     case Type::IncompleteArray:
     case Type::VariableArray:
     case Type::Record:
+    case Type::Reduction:
     case Type::ObjCObject:
     case Type::ObjCInterface:
       return TEK_Aggregate;
@@ -1359,6 +1360,7 @@ void CodeGenFunction::EmitVariablyModifiedType(QualType type) {
     case Type::Vector:
     case Type::ExtVector:
     case Type::Record:
+    case Type::Reduction:
     case Type::Enum:
     case Type::Elaborated:
     case Type::TemplateSpecialization:

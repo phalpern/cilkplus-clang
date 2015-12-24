@@ -949,6 +949,8 @@ void IndexingContext::getEntityInfo(const NamedDecl *D,
       break;
     case TTK_Enum:
       EntityInfo.kind = CXIdxEntity_Enum; break;
+    case TTK__Reduction:
+      EntityInfo.kind = CXIdxEntity__Reduction; break;
     }
 
     if (const CXXRecordDecl *CXXRec = dyn_cast<CXXRecordDecl>(D))

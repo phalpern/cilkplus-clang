@@ -418,6 +418,7 @@ private:
   bool TraverseArrayTypeLocHelper(ArrayTypeLoc TL);
   bool TraverseRecordHelper(RecordDecl *D);
   bool TraverseCXXRecordHelper(CXXRecordDecl *D);
+  bool TraverseReductionHelper(ReductionDecl *D);
   bool TraverseDeclaratorHelper(DeclaratorDecl *D);
   bool TraverseDeclContextHelper(DeclContext *DC);
   bool TraverseFunctionHelper(FunctionDecl *D);
@@ -955,6 +956,7 @@ DEF_TRAVERSE_TYPE(AutoType, {
   })
 
 DEF_TRAVERSE_TYPE(RecordType, { })
+DEF_TRAVERSE_TYPE(ReductionType, { })
 DEF_TRAVERSE_TYPE(EnumType, { })
 DEF_TRAVERSE_TYPE(TemplateTypeParmType, { })
 DEF_TRAVERSE_TYPE(SubstTemplateTypeParmType, { })
@@ -1183,6 +1185,7 @@ DEF_TRAVERSE_TYPELOC(AutoType, {
   })
 
 DEF_TRAVERSE_TYPELOC(RecordType, { })
+DEF_TRAVERSE_TYPELOC(ReductionType, { })
 DEF_TRAVERSE_TYPELOC(EnumType, { })
 DEF_TRAVERSE_TYPELOC(TemplateTypeParmType, { })
 DEF_TRAVERSE_TYPELOC(SubstTemplateTypeParmType, { })
@@ -1634,12 +1637,27 @@ bool RecursiveASTVisitor<Derived>::TraverseCXXRecordHelper(
   return true;
 }
 
+// Helper methods for ReductionDecl and its children.
+template<typename Derived>
+bool RecursiveASTVisitor<Derived>::TraverseReductionHelper(
+    ReductionDecl *D) {
+  // We shouldn't traverse D->getTypeForDecl(); it's a result of
+  // declaring the type, not something that was written in the source.
+
+//  TRY_TO(TraverseNestedNameSpecifierLoc(D->getQualifierLoc()));
+  return true;
+}
+
 DEF_TRAVERSE_DECL(RecordDecl, {
     TRY_TO(TraverseRecordHelper(D));
   })
 
 DEF_TRAVERSE_DECL(CXXRecordDecl, {
     TRY_TO(TraverseCXXRecordHelper(D));
+  })
+
+DEF_TRAVERSE_DECL(ReductionDecl, {
+    TRY_TO(TraverseReductionHelper(D));
   })
 
 #define DEF_TRAVERSE_TMPL_SPEC_DECL(TMPLDECLKIND) \

@@ -2321,6 +2321,10 @@ Decl *TemplateDeclInstantiator::VisitRecordDecl(RecordDecl *D) {
   llvm_unreachable("There are only CXXRecordDecls in C++");
 }
 
+Decl *TemplateDeclInstantiator::VisitReductionDecl(ReductionDecl *D) {
+  llvm_unreachable("There are no _Reduction types in C++");
+}
+
 Decl *
 TemplateDeclInstantiator::VisitClassTemplateSpecializationDecl(
     ClassTemplateSpecializationDecl *D) {

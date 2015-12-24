@@ -1704,6 +1704,10 @@ private:
                           const ParsedTemplateInfo &TemplateInfo,
                           AccessSpecifier AS, DeclSpecContext DSC);
   void ParseEnumBody(SourceLocation StartLoc, Decl *TagDecl);
+  void ParseReductionSpecifier(SourceLocation TagLoc, DeclSpec &DS,
+                               const ParsedTemplateInfo &TemplateInfo,
+                               AccessSpecifier AS, DeclSpecContext DSC);
+  void ParseReductionBody(SourceLocation StartLoc, Decl *ReductionDecl);
   void ParseStructUnionBody(SourceLocation StartLoc, unsigned TagType,
                             Decl *TagDecl);
 

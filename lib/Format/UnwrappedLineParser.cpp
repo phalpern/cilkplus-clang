@@ -655,6 +655,9 @@ void UnwrappedLineParser::parseStructuralElement() {
       // A record declaration or definition is always the start of a structural
       // element.
       break;
+    case tok::kw__Reduction:
+      // parseReduction();
+      break;
     case tok::semi:
       nextToken();
       addUnwrappedLine();
@@ -1095,7 +1098,8 @@ void UnwrappedLineParser::parseEnum() {
   nextToken();
   // Eat up enum class ...
   if (FormatTok->Tok.is(tok::kw_class) ||
-      FormatTok->Tok.is(tok::kw_struct))
+      FormatTok->Tok.is(tok::kw_struct) ||
+      FormatTok->Tok.is(tok::kw__Reduction))
       nextToken();
   while (FormatTok->Tok.getIdentifierInfo() ||
          FormatTok->isOneOf(tok::colon, tok::coloncolon)) {

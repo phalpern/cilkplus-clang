@@ -1816,6 +1816,9 @@ public:
                      SourceLocation RBraceLoc, Decl *EnumDecl,
                      ArrayRef<Decl *> Elements,
                      Scope *S, AttributeList *Attr);
+  void ActOnReductionBody(SourceLocation ReductionLoc, SourceLocation LBraceLoc,
+                          SourceLocation RBraceLoc, Decl *ReductionDeclX,
+                          Scope *S);
 
   DeclContext *getContainingDC(DeclContext *DC);
 

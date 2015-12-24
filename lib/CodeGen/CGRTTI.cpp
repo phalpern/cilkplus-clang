@@ -448,6 +448,7 @@ void RTTIBuilder::BuildVTablePointer(const Type *Ty) {
     VTableName = "_ZTVN10__cxxabiv116__enum_type_infoE";
     break;
 
+  case Type::Reduction:
   case Type::Record: {
     const CXXRecordDecl *RD = 
       cast<CXXRecordDecl>(cast<RecordType>(Ty)->getDecl());
@@ -593,6 +594,7 @@ llvm::Constant *RTTIBuilder::BuildTypeInfo(QualType Ty, bool Force) {
     // abi::__enum_type_info adds no data members to std::type_info.
     break;
 
+  case Type::Reduction:
   case Type::Record: {
     const CXXRecordDecl *RD = 
       cast<CXXRecordDecl>(cast<RecordType>(Ty)->getDecl());

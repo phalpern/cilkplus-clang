@@ -550,6 +550,7 @@ unsigned Decl::getIdentifierNamespaceForKind(Kind DeclKind) {
     case Record:
     case CXXRecord:
     case Enum:
+    case Reduction:
       return IDNS_Tag | IDNS_Type;
 
     case Namespace:

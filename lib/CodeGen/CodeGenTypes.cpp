@@ -310,6 +310,7 @@ llvm::Type *CodeGenTypes::ConvertType(QualType T) {
   llvm::Type *ResultType = 0;
   switch (Ty->getTypeClass()) {
   case Type::Record: // Handled above.
+  case Type::Reduction: // Handled above.
 #define TYPE(Class, Base)
 #define ABSTRACT_TYPE(Class, Base)
 #define NON_CANONICAL_TYPE(Class, Base) case Type::Class:

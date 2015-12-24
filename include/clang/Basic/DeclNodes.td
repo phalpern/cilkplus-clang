@@ -28,6 +28,7 @@ def Named : Decl<1>;
           def ClassTemplateSpecialization : DDecl<CXXRecord>;
             def ClassTemplatePartialSpecialization
               : DDecl<ClassTemplateSpecialization>;
+        def Reduction : DDecl<Record>;
     def TemplateTypeParm : DDecl<Type>;
   def Value : DDecl<Named, 1>;
     def EnumConstant : DDecl<Value>;

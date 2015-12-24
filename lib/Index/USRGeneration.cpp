@@ -395,6 +395,7 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
       case TTK_Class:  Out << "@CT"; break;
       case TTK_Union:  Out << "@UT"; break;
       case TTK_Enum: llvm_unreachable("enum template");
+      case TTK__Reduction: llvm_unreachable("reduction template");
       }
       VisitTemplateParameterList(ClassTmpl->getTemplateParameters());
     } else if (const ClassTemplatePartialSpecializationDecl *PartialSpec
@@ -407,6 +408,7 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
       case TTK_Class:  Out << "@CP"; break;
       case TTK_Union:  Out << "@UP"; break;
       case TTK_Enum: llvm_unreachable("enum partial specialization");
+      case TTK__Reduction: llvm_unreachable("reduction partial specialization");
       }      
       VisitTemplateParameterList(PartialSpec->getTemplateParameters());
     }
@@ -419,6 +421,7 @@ void USRGenerator::VisitTagDecl(const TagDecl *D) {
       case TTK_Class:  Out << "@C"; break;
       case TTK_Union:  Out << "@U"; break;
       case TTK_Enum:   Out << "@E"; break;
+      case TTK__Reduction: Out << "@R"; break;
     }
   }
   

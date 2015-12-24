@@ -3934,6 +3934,10 @@ bool UnnamedLocalNoLinkageFinder::VisitRecordType(const RecordType* T) {
   return VisitTagDecl(T->getDecl());
 }
 
+bool UnnamedLocalNoLinkageFinder::VisitReductionType(const ReductionType* T) {
+  return VisitTagDecl(T->getDecl());
+}
+
 bool UnnamedLocalNoLinkageFinder::VisitEnumType(const EnumType* T) {
   return VisitTagDecl(T->getDecl());
 }

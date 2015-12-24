@@ -1474,6 +1474,9 @@ void MicrosoftCXXNameMangler::mangleType(const EnumType *T, SourceRange) {
 void MicrosoftCXXNameMangler::mangleType(const RecordType *T, SourceRange) {
   mangleType(cast<TagType>(T)->getDecl());
 }
+void MicrosoftCXXNameMangler::mangleType(const ReductionType *T, SourceRange) {
+  mangleType(cast<TagType>(T)->getDecl());
+}
 void MicrosoftCXXNameMangler::mangleType(const TagDecl *TD) {
   switch (TD->getTagKind()) {
     case TTK_Union:
@@ -1481,6 +1484,7 @@ void MicrosoftCXXNameMangler::mangleType(const TagDecl *TD) {
       break;
     case TTK_Struct:
     case TTK_Interface:
+    case TTK__Reduction:
       Out << 'U';
       break;
     case TTK_Class:

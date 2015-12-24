@@ -157,6 +157,7 @@ bool serialization::isRedeclarableDeclKind(unsigned Kind) {
   case Decl::Enum:
   case Decl::Record:
   case Decl::CXXRecord:
+  case Decl::Reduction:
   case Decl::ClassTemplateSpecialization:
   case Decl::ClassTemplatePartialSpecialization:
   case Decl::VarTemplateSpecialization:

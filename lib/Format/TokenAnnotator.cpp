@@ -1152,7 +1152,7 @@ unsigned TokenAnnotator::splitPenalty(const AnnotatedLine &Line,
     return 100;
   if (Left.is(tok::coloncolon))
     return 500;
-  if (Left.isOneOf(tok::kw_class, tok::kw_struct))
+  if (Left.isOneOf(tok::kw_class, tok::kw_struct, tok::kw__Reduction))
     return 5000;
 
   if (Left.Type == TT_RangeBasedForLoopColon ||
@@ -1500,7 +1500,7 @@ bool TokenAnnotator::canBreakBefore(const AnnotatedLine &Line,
   return (Left.isBinaryOperator() && Left.isNot(tok::lessless) &&
           !Style.BreakBeforeBinaryOperators) ||
          Left.isOneOf(tok::comma, tok::coloncolon, tok::semi, tok::l_brace,
-                      tok::kw_class, tok::kw_struct) ||
+                      tok::kw_class, tok::kw_struct, tok::kw__Reduction) ||
          Right.isOneOf(tok::lessless, tok::arrow, tok::period, tok::colon,
                        tok::l_square, tok::at) ||
          (Left.is(tok::r_paren) &&

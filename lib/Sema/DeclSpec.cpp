@@ -295,6 +295,7 @@ bool Declarator::isDeclarationOfFunction() const {
     case TST_sampler_t:
     case TST_event_t:
     case TST_cilkrts_sf_t:
+    case TST__Reduction:
       return false;
 
     case TST_decltype_auto:
@@ -470,6 +471,7 @@ const char *DeclSpec::getSpecifierName(DeclSpec::TST T) {
   case DeclSpec::TST_event_t:     return "event_t";
   case DeclSpec::TST_error:       return "(error)";
   case DeclSpec::TST_cilkrts_sf_t: return "__cilkrts_stack_frame";
+  case DeclSpec::TST__Reduction:  return "_Reduction";
   }
   llvm_unreachable("Unknown typespec!");
 }

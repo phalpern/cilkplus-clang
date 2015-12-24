@@ -785,6 +785,7 @@ IdentifierInfo *Parser::ParseObjCSelectorPiece(SourceLocation &SelectorLoc) {
   case tok::kw__Bool:
   case tok::kw__Complex:
   case tok::kw___alignof:
+  case tok::kw__Reduction:
     IdentifierInfo *II = Tok.getIdentifierInfo();
     SelectorLoc = ConsumeToken();
     return II;

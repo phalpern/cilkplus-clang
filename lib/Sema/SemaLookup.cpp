@@ -2163,6 +2163,7 @@ addAssociatedClassesAndNamespaces(AssociatedLookup &Result, QualType Ty) {
     //        member, if any; and its direct and indirect base
     //        classes. Its associated namespaces are the namespaces in
     //        which its associated classes are defined.
+    case Type::Reduction:
     case Type::Record: {
       CXXRecordDecl *Class
         = cast<CXXRecordDecl>(cast<RecordType>(T)->getDecl());

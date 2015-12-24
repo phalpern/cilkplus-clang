@@ -2516,6 +2516,7 @@ static const char *getEntityKindString(CXIdxEntityKind kind) {
   case CXIdxEntity_CXXConversionFunction: return "conversion-func";
   case CXIdxEntity_CXXTypeAlias: return "type-alias";
   case CXIdxEntity_CXXInterface: return "c++-__interface";
+  case CXIdxEntity__Reduction: return "_Reduction";
   }
   assert(0 && "Garbage entity kind");
   return 0;

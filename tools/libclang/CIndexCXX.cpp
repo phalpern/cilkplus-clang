@@ -71,6 +71,7 @@ enum CXCursorKind clang_getTemplateCursorKind(CXCursor C) {
       case TTK_Class: return CXCursor_ClassDecl;
       case TTK_Union: return CXCursor_UnionDecl;
       case TTK_Enum: return CXCursor_NoDeclFound;
+      case TTK__Reduction: return CXCursor__ReductionDecl;
       }
     }
     break;

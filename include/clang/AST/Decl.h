@@ -3005,7 +3005,6 @@ public:
   friend class ASTDeclReader;
 };
 
-
 /// RecordDecl - Represents a struct/union/class.  For example:
 ///   struct X;                  // Forward declaration, no "body".
 ///   union Y { int A, B; };     // Has body with members A and B (FieldDecls).
@@ -3179,6 +3178,22 @@ public:
 
   static bool classof(const Decl *D) { return classofKind(D->getKind()); }
   static bool classofKind(Kind K) { return K == FileScopeAsm; }
+};
+
+/// ReductionDecl - Represents a reduction type.
+class ReductionDecl : public RecordDecl {
+
+  // Private -- Called by Create()
+  ReductionDecl(DeclContext *DC, SourceLocation StartLoc, SourceLocation IdLoc,
+                IdentifierInfo *Id, ReductionDecl *PrevDecl)
+    : RecordDecl(Reduction, TTK__Reduction, DC, StartLoc, IdLoc, Id, PrevDecl) { }
+
+public:
+  static ReductionDecl* Create(ASTContext &C, DeclContext *DC,
+                               SourceLocation StartLoc, SourceLocation IdLoc,
+                               IdentifierInfo *Id,
+                               ReductionDecl *PrevDecl);
+  void completeDefinition();
 };
 
 /// BlockDecl - This represents a block literal declaration, which is like an

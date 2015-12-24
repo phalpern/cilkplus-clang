@@ -178,6 +178,7 @@ bool TypePrinter::canPrefixQualifiers(const Type *T,
     case Type::Decltype:
     case Type::UnaryTransform:
     case Type::Record:
+    case Type::Reduction:
     case Type::Enum:
     case Type::Elaborated:
     case Type::TemplateTypeParm:
@@ -947,6 +948,11 @@ void TypePrinter::printRecordBefore(const RecordType *T, raw_ostream &OS) {
   printTag(T->getDecl(), OS);
 }
 void TypePrinter::printRecordAfter(const RecordType *T, raw_ostream &OS) { }
+
+void TypePrinter::printReductionBefore(const ReductionType *T, raw_ostream &OS) {
+  printTag(T->getDecl(), OS);
+}
+void TypePrinter::printReductionAfter(const ReductionType *T, raw_ostream &OS) { }
 
 void TypePrinter::printEnumBefore(const EnumType *T, raw_ostream &OS) { 
   printTag(T->getDecl(), OS);

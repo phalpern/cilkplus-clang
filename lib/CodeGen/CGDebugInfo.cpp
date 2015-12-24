@@ -399,6 +399,7 @@ llvm::DIType CGDebugInfo::CreateType(const BuiltinType *BT) {
 #define PLACEHOLDER_TYPE(Id, SingletonId) \
   case BuiltinType::Id:
 #include "clang/AST/BuiltinTypes.def"
+  case BuiltinType::CilkrtsSF:
   case BuiltinType::Dependent:
     llvm_unreachable("Unexpected builtin type");
   case BuiltinType::NullPtr:
@@ -2138,6 +2139,8 @@ llvm::DIType CGDebugInfo::CreateTypeNode(QualType Ty, llvm::DIFile Unit) {
     return CreateType(cast<TypedefType>(Ty), Unit);
   case Type::Record:
     return CreateType(cast<RecordType>(Ty));
+  case Type::Reduction:
+      return CreateType(cast<RecordType>(Ty)); // FIXME: Need to implement CreateType() for ReductionType
   case Type::Enum:
     return CreateEnumType(cast<EnumType>(Ty));
   case Type::FunctionProto:

@@ -643,6 +643,14 @@ public:
   RecordDecl *getDecl() const { return getTypePtr()->getDecl(); }
 };
 
+/// \brief Wrapper for source info for reduction types.
+class ReductionTypeLoc : public InheritingConcreteTypeLoc<RecordTypeLoc,
+                                                          ReductionTypeLoc,
+                                                          ReductionType> {
+public:
+  ReductionDecl *getDecl() const { return getTypePtr()->getDecl(); }
+};
+
 /// \brief Wrapper for source info for enum types.
 class EnumTypeLoc : public InheritingConcreteTypeLoc<TagTypeLoc,
                                                      EnumTypeLoc,

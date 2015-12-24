@@ -3823,6 +3823,8 @@ CXString clang_getCursorKindSpelling(enum CXCursorKind Kind) {
       return cxstring::createRef("OMPParallelDirective");
   case CXCursor_CilkRankedStmt:
     return cxstring::createRef("CilkRankedStmt");
+  case CXCursor__ReductionDecl:
+    return cxstring::createRef("_ReductionDecl");
   }
 
   llvm_unreachable("Unhandled CXCursorKind");

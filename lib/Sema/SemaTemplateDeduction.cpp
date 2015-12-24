@@ -1186,6 +1186,7 @@ DeduceTemplateArgumentsByTypeMatch(Sema &S,
     case Type::Vector:
     case Type::FunctionNoProto:
     case Type::Record:
+    case Type::Reduction:
     case Type::Enum:
     case Type::ObjCObject:
     case Type::ObjCInterface:
@@ -5010,6 +5011,7 @@ MarkUsedTemplateParameters(ASTContext &Ctx, QualType T,
   case Type::VariableArray:
   case Type::FunctionNoProto:
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum:
   case Type::ObjCInterface:
   case Type::ObjCObject:

@@ -884,6 +884,7 @@ static QualType ConvertDeclSpecToType(TypeProcessingState &state) {
   case DeclSpec::TST_enum:
   case DeclSpec::TST_union:
   case DeclSpec::TST_struct:
+  case DeclSpec::TST__Reduction:
   case DeclSpec::TST_interface: {
     TypeDecl *D = dyn_cast_or_null<TypeDecl>(DS.getRepAsDecl());
     if (!D) {
@@ -2161,6 +2162,7 @@ static QualType GetDeclSpecTypeForDeclarator(TypeProcessingState &state,
       case TTK_Union:  Error = 2; /* Union member */ break;
       case TTK_Class:  Error = 3; /* Class member */ break;
       case TTK_Interface: Error = 4; /* Interface member */ break;
+      case TTK__Reduction: Error = 4; break;
       }
       break;
     case Declarator::CXXCatchContext:

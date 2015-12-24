@@ -901,6 +901,7 @@ void CXXNameMangler::mangleUnresolvedPrefix(NestedNameSpecifier *qualifier,
                          ->getIdentifier());
       break;
 
+    case Type::Reduction:
     case Type::Record:
       mangleSourceName(cast<RecordType>(type)->getDecl()->getIdentifier());
       break;
@@ -2050,6 +2051,9 @@ void CXXNameMangler::mangleType(const EnumType *T) {
   mangleType(static_cast<const TagType*>(T));
 }
 void CXXNameMangler::mangleType(const RecordType *T) {
+  mangleType(static_cast<const TagType*>(T));
+}
+void CXXNameMangler::mangleType(const ReductionType *T) {
   mangleType(static_cast<const TagType*>(T));
 }
 void CXXNameMangler::mangleType(const TagType *T) {

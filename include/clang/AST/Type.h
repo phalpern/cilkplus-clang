@@ -79,6 +79,7 @@ namespace clang {
   class TagDecl;
   class RecordDecl;
   class CXXRecordDecl;
+  class ReductionDecl;
   class EnumDecl;
   class FieldDecl;
   class FunctionDecl;
@@ -3312,7 +3313,7 @@ class RecordType : public TagType {
 protected:
   explicit RecordType(const RecordDecl *D)
     : TagType(Record, reinterpret_cast<const TagDecl*>(D), QualType()) { }
-  explicit RecordType(TypeClass TC, RecordDecl *D)
+  explicit RecordType(TypeClass TC, const RecordDecl *D)
     : TagType(TC, reinterpret_cast<const TagDecl*>(D), QualType()) { }
   friend class ASTContext;   // ASTContext creates these.
 public:
@@ -3330,6 +3331,24 @@ public:
   QualType desugar() const { return QualType(this, 0); }
 
   static bool classof(const Type *T) { return T->getTypeClass() == Record; }
+};
+
+/// ReductionType - This is a helper class that allows the use of isa/cast/dyncast
+/// to detect TagType objects of reductions.
+class ReductionType : public RecordType {
+protected:
+  explicit ReductionType(const ReductionDecl *D)
+    : RecordType(Reduction, reinterpret_cast<const RecordDecl*>(D)) { }
+  explicit ReductionType(TypeClass TC, ReductionDecl *D)
+    : RecordType(TC, reinterpret_cast<const RecordDecl*>(D)) { }
+  friend class ASTContext;   // ASTContext creates these.
+public:
+
+  ReductionDecl *getDecl() const {
+    return reinterpret_cast<ReductionDecl*>(TagType::getDecl());
+  }
+
+  static bool classof(const Type *T) { return T->getTypeClass() == Reduction; }
 };
 
 /// EnumType - This is a helper class that allows the use of isa/cast/dyncast
@@ -3895,7 +3914,9 @@ enum TagTypeKind {
   /// \brief The "class" keyword.
   TTK_Class,
   /// \brief The "enum" keyword.
-  TTK_Enum
+  TTK_Enum,
+  /// \brief The "_Reduction" keyword
+  TTK__Reduction
 };
 
 /// \brief The elaboration keyword that precedes a qualified type name or
@@ -3911,6 +3932,8 @@ enum ElaboratedTypeKeyword {
   ETK_Class,
   /// \brief The "enum" keyword introduces the elaborated-type-specifier.
   ETK_Enum,
+  /// \brief The "_Reduction" keyword introduces the elaborated-type-specifier.
+  ETK__Reduction,
   /// \brief The "typename" keyword precedes the qualified type name, e.g.,
   /// \c typename T::type.
   ETK_Typename,

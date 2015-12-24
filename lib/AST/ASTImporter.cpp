@@ -648,6 +648,7 @@ static bool IsStructurallyEquivalent(StructuralEquivalenceContext &Context,
     break;
 
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum:
     if (!IsStructurallyEquivalent(Context,
                                   cast<TagType>(T1)->getDecl(),

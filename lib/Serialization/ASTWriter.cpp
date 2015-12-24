@@ -268,6 +268,11 @@ void ASTTypeWriter::VisitRecordType(const RecordType *T) {
   Code = TYPE_RECORD;
 }
 
+void ASTTypeWriter::VisitReductionType(const ReductionType *T) {
+  VisitRecordType(T);
+  // Code = TYPE_REDUCTION; // TBD
+}
+
 void ASTTypeWriter::VisitEnumType(const EnumType *T) {
   VisitTagType(T);
   Code = TYPE_ENUM;
@@ -542,6 +547,9 @@ void TypeLocWriter::VisitAutoTypeLoc(AutoTypeLoc TL) {
   Writer.AddSourceLocation(TL.getNameLoc(), Record);
 }
 void TypeLocWriter::VisitRecordTypeLoc(RecordTypeLoc TL) {
+  Writer.AddSourceLocation(TL.getNameLoc(), Record);
+}
+void TypeLocWriter::VisitReductionTypeLoc(ReductionTypeLoc TL) {
   Writer.AddSourceLocation(TL.getNameLoc(), Record);
 }
 void TypeLocWriter::VisitEnumTypeLoc(EnumTypeLoc TL) {

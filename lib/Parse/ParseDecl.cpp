@@ -2349,6 +2349,8 @@ bool Parser::ParseImplicitInt(DeclSpec &DS, CXXScopeSpec *SS,
         TagName="union" ; FixitTagName = "union " ;TagKind=tok::kw_union ;break;
       case DeclSpec::TST_struct:
         TagName="struct"; FixitTagName = "struct ";TagKind=tok::kw_struct;break;
+      case DeclSpec::TST__Reduction:
+        TagName="_Reduction"; FixitTagName = "_Reduction ";TagKind=tok::kw__Reduction;break;
       case DeclSpec::TST_interface:
         TagName="__interface"; FixitTagName = "__interface ";
         TagKind=tok::kw___interface;break;
@@ -2375,6 +2377,8 @@ bool Parser::ParseImplicitInt(DeclSpec &DS, CXXScopeSpec *SS,
       // Parse this as a tag as if the missing tag were present.
       if (TagKind == tok::kw_enum)
         ParseEnumSpecifier(Loc, DS, TemplateInfo, AS, DSC_normal);
+      else if (TagKind == tok::kw__Reduction)
+        ParseReductionSpecifier(Loc, DS, TemplateInfo, AS, DSC_normal);
       else
         ParseClassSpecifier(TagKind, Loc, DS, TemplateInfo, AS,
                             /*EnteringContext*/ false, DSC_normal, Attrs);
@@ -3395,6 +3399,12 @@ void Parser::ParseDeclarationSpecifiers(DeclSpec &DS,
       ParseEnumSpecifier(Loc, DS, TemplateInfo, AS, DSContext);
       continue;
 
+    // reduction-specifier
+    case tok::kw__Reduction:
+      ConsumeToken();
+      ParseReductionSpecifier(Loc, DS, TemplateInfo, AS, DSContext);
+      continue;
+
     // cv-qualifier:
     case tok::kw_const:
       isInvalid = DS.SetTypeQual(DeclSpec::TQ_const, Loc, PrevSpec, DiagID,
@@ -4167,6 +4177,199 @@ void Parser::ParseEnumBody(SourceLocation StartLoc, Decl *EnumDecl) {
   }
 }
 
+void Parser::ParseReductionSpecifier(SourceLocation StartLoc, DeclSpec &DS,
+                                     const ParsedTemplateInfo &TemplateInfo,
+                                     AccessSpecifier AS, DeclSpecContext DSC) {
+  // Parse the tag portion of this.
+  if (Tok.is(tok::code_completion)) {
+    // Code completion for a _Reduction name.
+    Actions.CodeCompleteTag(getCurScope(), DeclSpec::TST__Reduction);
+    return cutOffParsing();
+  }
+
+  // If attributes exist after tag, parse them.
+  ParsedAttributesWithRange attrs(AttrFactory);
+  MaybeParseGNUAttributes(attrs);
+  MaybeParseCXX11Attributes(attrs);
+
+  // If declspecs exist after tag, parse them.
+  while (Tok.is(tok::kw___declspec))
+    ParseMicrosoftDeclSpec(attrs);
+
+  // C++11 [temp.explicit]p12:
+  //   The usual access controls do not apply to names used to specify
+  //   explicit instantiations.
+  // We extend this to also cover explicit specializations.  Note that
+  // we don't suppress if this turns out to be an elaborated type
+  // specifier.
+  bool shouldDelayDiagsInTag =
+    (TemplateInfo.Kind == ParsedTemplateInfo::ExplicitInstantiation ||
+     TemplateInfo.Kind == ParsedTemplateInfo::ExplicitSpecialization);
+  SuppressAccessChecks diagsFromTag(*this, shouldDelayDiagsInTag);
+
+  // Reduction definitions should not be parsed in a trailing-return-type.
+  bool AllowDeclaration = DSC != DSC_trailing;
+
+//  CXXScopeSpec &SS = DS.getTypeSpecScope();
+
+  // Must have either '_Reduction name' or '_Reduction {...}'.
+  if (Tok.isNot(tok::identifier) && Tok.isNot(tok::l_brace)) {
+    Diag(Tok, diag::err_expected_ident_lbrace);
+
+    // Skip the rest of this declarator, up until the comma or semicolon.
+    SkipUntil(tok::comma, StopAtSemi);
+    return;
+  }
+
+  // If an identifier is present, consume and remember it.
+  IdentifierInfo *Name = 0;
+  SourceLocation NameLoc;
+  if (Tok.is(tok::identifier)) {
+    Name = Tok.getIdentifierInfo();
+    NameLoc = ConsumeToken();
+  }
+
+  // Okay, end the suppression area.  We'll decide whether to emit the
+  // diagnostics in a second.
+  if (shouldDelayDiagsInTag)
+    diagsFromTag.done();
+
+  TypeResult BaseType;
+
+  // There are four options here.  If we have 'friend _Reduction foo;' then this is a
+  // friend declaration, and cannot have an accompanying definition. If we have
+  // '_Reduction foo;', then this is a forward declaration.  If we have
+  // '_Reduction foo {...' then this is a definition. Otherwise we have something
+  // like '_Reduction foo xyz', a reference.
+
+  Sema::TagUseKind TUK;
+  if (!AllowDeclaration) {
+    TUK = Sema::TUK_Reference;
+  } else if (Tok.is(tok::l_brace)) {
+    if (DS.isFriendSpecified()) {
+      Diag(Tok.getLocation(), diag::err_friend_decl_defines_type)
+        << SourceRange(DS.getFriendSpecLoc());
+      ConsumeBrace();
+      SkipUntil(tok::r_brace, StopAtSemi);
+      TUK = Sema::TUK_Friend;
+    } else {
+      TUK = Sema::TUK_Definition;
+    }
+  } else if (DSC != DSC_type_specifier &&
+             (Tok.is(tok::semi) ||
+              (Tok.isAtStartOfLine() &&
+               !isValidAfterTypeSpecifier(false)))) {
+    TUK = DS.isFriendSpecified() ? Sema::TUK_Friend : Sema::TUK_Declaration;
+    if (Tok.isNot(tok::semi)) {
+      // A semicolon was missing after this declaration. Diagnose and recover.
+      ExpectAndConsume(tok::semi, diag::err_expected_semi_after_tagdecl,
+                       "_Reduction");
+      PP.EnterToken(Tok);
+      Tok.setKind(tok::semi);
+    }
+  } else {
+    TUK = Sema::TUK_Reference;
+  }
+
+  bool Owned = false;
+  bool IsDependent = false;
+  const char *PrevSpec = 0;
+  unsigned DiagID;
+  CXXScopeSpec SS;
+  MultiTemplateParamsArg TParams;
+  Decl *TagDecl = Actions.ActOnTag(getCurScope(), DeclSpec::TST__Reduction, TUK,
+                                   StartLoc, SS, Name, NameLoc, attrs.getList(),
+                                   AS, DS.getModulePrivateSpecLoc(), TParams,
+                                   Owned, IsDependent,
+                                   SourceLocation(), false,
+                                   clang::TypeResult());
+
+  if (!TagDecl) {
+    // The action failed to produce a reduction tag. If this is a
+    // definition, consume the entire definition.
+    if (Tok.is(tok::l_brace) && TUK != Sema::TUK_Reference) {
+      ConsumeBrace();
+      SkipUntil(tok::r_brace, StopAtSemi);
+    }
+
+    DS.SetTypeSpecError();
+    return;
+  }
+
+  if (Tok.is(tok::l_brace) && TUK != Sema::TUK_Reference)
+    ParseReductionBody(StartLoc, TagDecl);
+
+  if (DS.SetTypeSpecType(DeclSpec::TST__Reduction, StartLoc,
+                         NameLoc.isValid() ? NameLoc : StartLoc,
+                         PrevSpec, DiagID, TagDecl, Owned))
+    Diag(StartLoc, DiagID) << PrevSpec;
+}
+
+/// ParseReductionBody - Parse a {} enclosed reduction-aspect-list
+///
+///  reduction-aspect-list:
+///    reduction-aspect
+///    reduction-aspect-list , reduction-aspect
+///
+///  reduction-aspect:
+///    _Type : type-name
+///    _Combiner : combiner-operation
+///    _Initializer : initializer
+///    _Finalizer : constant-expression
+///    _Order : reduction-order-constraint
+///
+///  combiner-operation:
+///    constant-expression
+///    builtin-combiner-operation
+///
+///  builtin-combiner-operation:
+///    *=
+///    +=
+///    &=
+///    ^=
+///    |=
+///    _And
+///    _Or
+///    _Min
+///    _Max
+///    _Last
+///
+///  reduction-order-constraint:
+///    _Commutative
+///    _Associative
+///
+void Parser::ParseReductionBody(SourceLocation StartLoc, Decl *ReductionDecl) {
+
+  // Enter the scope of the reduction body and start the definition
+  ParseScope ReductionScope(this, Scope::DeclScope);
+  Actions.ActOnTagStartDefinition(getCurScope(), ReductionDecl);
+
+  BalancedDelimiterTracker T(*this, tok::l_brace);
+  T.consumeOpen();
+
+  
+
+  T.consumeClose();
+
+  Actions.ActOnReductionBody(StartLoc, T.getOpenLocation(), T.getCloseLocation(),
+                             ReductionDecl, getCurScope());
+
+  ReductionScope.Exit();
+  Actions.ActOnTagFinishDefinition(getCurScope(), ReductionDecl,
+                                   T.getCloseLocation());
+
+  // The next token must be valid after a reduction definition. If not, a ';'
+  // was probably forgotten.
+  if (!isValidAfterTypeSpecifier(false)) {
+    ExpectAndConsume(tok::semi, diag::err_expected_semi_after_tagdecl, "_Reduction");
+    // Push this token back into the preprocessor and change our current token
+    // to ';' so that the rest of the code recovers as though there were an
+    // ';' after the definition.
+    PP.EnterToken(Tok);
+    Tok.setKind(tok::semi);
+  }
+}
+
 /// isTypeSpecifierQualifier - Return true if the current token could be the
 /// start of a type-qualifier-list.
 bool Parser::isTypeQualifier() const {
@@ -4241,6 +4444,8 @@ bool Parser::isKnownToBeTypeSpecifier(const Token &Tok) const {
   case tok::kw_union:
     // enum-specifier
   case tok::kw_enum:
+    // Reduction specifier
+  case tok::kw__Reduction:
 
     // typedef-name
   case tok::annot_typename:
@@ -4324,6 +4529,8 @@ bool Parser::isTypeSpecifierQualifier() {
   case tok::kw_union:
     // enum-specifier
   case tok::kw_enum:
+    // Reduction specifier
+  case tok::kw__Reduction:
 
     // type-qualifier
   case tok::kw_const:
@@ -4481,6 +4688,8 @@ bool Parser::isDeclarationSpecifier(bool DisambiguatingWithExpression) {
   case tok::kw___interface:
     // enum-specifier
   case tok::kw_enum:
+    // Reduction specifier
+  case tok::kw__Reduction:
 
     // type-qualifier
   case tok::kw_const:

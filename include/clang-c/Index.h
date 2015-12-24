@@ -2114,8 +2114,11 @@ enum CXCursorKind {
    * \brief A module import declaration.
    */
   CXCursor_ModuleImportDecl              = 600,
+  /** \brief Reduction type declaration
+   */
+  CXCursor__ReductionDecl                = 601,
   CXCursor_FirstExtraDecl                = CXCursor_ModuleImportDecl,
-  CXCursor_LastExtraDecl                 = CXCursor_ModuleImportDecl
+  CXCursor_LastExtraDecl                 = CXCursor__ReductionDecl
 };
 
 /**
@@ -5392,7 +5395,9 @@ typedef enum {
   CXIdxEntity_CXXDestructor         = 23,
   CXIdxEntity_CXXConversionFunction = 24,
   CXIdxEntity_CXXTypeAlias          = 25,
-  CXIdxEntity_CXXInterface          = 26
+  CXIdxEntity_CXXInterface          = 26,
+
+  CXIdxEntity__Reduction    = 27
 
 } CXIdxEntityKind;
 

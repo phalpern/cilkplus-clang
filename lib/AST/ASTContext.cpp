@@ -1662,6 +1662,7 @@ ASTContext::getTypeInfoImpl(const Type *T) const {
     break;
   }
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum: {
     const TagType *TT = cast<TagType>(T);
 
@@ -2435,6 +2436,7 @@ QualType ASTContext::getVariableArrayDecayedType(QualType type) const {
   case Type::ObjCInterface:
   case Type::ObjCObjectPointer:
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum:
   case Type::UnresolvedUsing:
   case Type::TypeOfExpr:
@@ -5326,6 +5328,7 @@ void ASTContext::getObjCEncodingForTypeImpl(QualType T, std::string& S,
     S += '?';
     return;
 
+  case Type::Reduction:
   case Type::Record: {
     RecordDecl *RDecl = cast<RecordType>(CT)->getDecl();
     S += RDecl->isUnion() ? '(' : '{';
@@ -7366,6 +7369,7 @@ QualType ASTContext::mergeTypes(QualType LHS, QualType RHS,
   case Type::FunctionNoProto:
     return mergeFunctionTypes(LHS, RHS, OfBlockPointer, Unqualified);
   case Type::Record:
+  case Type::Reduction:
   case Type::Enum:
     return QualType();
   case Type::Builtin:
